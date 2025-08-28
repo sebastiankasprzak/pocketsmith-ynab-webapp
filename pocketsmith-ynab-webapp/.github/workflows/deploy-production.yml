@@ -1,0 +1,108 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy'
+        required: true
+        default: 'latest'
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run full test suite
+      run: |
+        npm run test:ci
+        npm run test:integration
+        
+    - name: Build for production
+      run: npm run build
+      env:
+        VITE_ENVIRONMENT: production
+        VITE_API_BASE_URL: ${{ secrets.PRODUCTION_API_BASE_URL }}
+        VITE_AWS_REGION: ${{ secrets.AWS_REGION }}
+        VITE_COGNITO_USER_POOL_ID: ${{ secrets.PRODUCTION_COGNITO_USER_POOL_ID }}
+        VITE_COGNITO_USER_POOL_CLIENT_ID: ${{ secrets.PRODUCTION_COGNITO_CLIENT_ID }}
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        
+    - name: Create backup of current deployment
+      run: |
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        aws s3 sync s3://${{ secrets.PRODUCTION_S3_BUCKET }} s3://${{ secrets.BACKUP_S3_BUCKET }}/backup-$TIMESTAMP/ --exclude "*.log"
+        
+    - name: Deploy infrastructure to production
+      run: |
+        cd ../infrastructure
+        npm ci
+        npx cdk deploy --require-approval never --context environment=production
+        
+    - name: Deploy webapp to S3
+      run: |
+        aws s3 sync dist/ s3://${{ secrets.PRODUCTION_S3_BUCKET }} --delete
+        
+    - name: Invalidate CloudFront cache
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.PRODUCTION_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        
+    - name: Wait for deployment to be available
+      run: |
+        echo "Waiting for deployment to be available..."
+        sleep 30
+        
+    - name: Run production smoke tests
+      run: npm run test:e2e:production
+      env:
+        PRODUCTION_BASE_URL: ${{ secrets.PRODUCTION_BASE_URL }}
+        
+    - name: Create GitHub release
+      if: success()
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          Automated production deployment
+          Commit: ${{ github.sha }}
+          
+    - name: Rollback on failure
+      if: failure()
+      run: |
+        echo "Deployment failed, initiating rollback..."
+        LATEST_BACKUP=$(aws s3 ls s3://${{ secrets.BACKUP_S3_BUCKET }}/ | sort | tail -n 1 | awk '{print $4}')
+        aws s3 sync s3://${{ secrets.BACKUP_S3_BUCKET }}/$LATEST_BACKUP s3://${{ secrets.PRODUCTION_S3_BUCKET }} --delete
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.PRODUCTION_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        
+    - name: Notify deployment status
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: 'Production deployment ${{ job.status }}: ${{ github.event.head_commit.message }}'

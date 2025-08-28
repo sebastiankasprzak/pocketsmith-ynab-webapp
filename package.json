@@ -1,0 +1,50 @@
+{
+  "name": "pocketsmith-ynab-sync-webui-app",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "pocketsmith-ynab-webapp",
+    "infrastructure"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=pocketsmith-ynab-webapp",
+    "build": "npm run build --workspace=pocketsmith-ynab-webapp",
+    "test": "npm run test --workspace=pocketsmith-ynab-webapp",
+    "test:coverage": "npm run test:coverage --workspace=pocketsmith-ynab-webapp",
+    "lint": "npm run lint --workspace=pocketsmith-ynab-webapp",
+    "type-check": "npm run type-check --workspace=pocketsmith-ynab-webapp",
+    "preview": "npm run preview --workspace=pocketsmith-ynab-webapp",
+    "infra:build": "npm run build --workspace=infrastructure",
+    "infra:test": "npm run test --workspace=infrastructure",
+    "infra:lambda:build": "npm run lambda:build --workspace=infrastructure",
+    "test:ci": "npm run test:ci --workspace=pocketsmith-ynab-webapp",
+    "test:integration": "npm run test:integration --workspace=pocketsmith-ynab-webapp",
+    "lint:fix": "npm run lint -- --fix --workspace=pocketsmith-ynab-webapp",
+    "infra:deploy": "npm run cdk deploy --workspace=infrastructure",
+    "infra:synth": "npm run cdk synth --workspace=infrastructure",
+    "infra:diff": "npm run cdk diff --workspace=infrastructure",
+    "infra:destroy": "npm run cdk destroy --workspace=infrastructure",
+    "deploy": "./deploy_wrapper.sh",
+    "install:all": "npm install --legacy-peer-deps",
+    "clean": "rm -rf node_modules pocketsmith-ynab-webapp/node_modules infrastructure/node_modules pocketsmith-ynab-webapp/dist infrastructure/cdk.out infrastructure/lambda/*/dist infrastructure/lambda/*/node_modules",
+    "clean:lambda": "rm -rf infrastructure/lambda/*/dist infrastructure/lambda/*/node_modules",
+    "lambda:install": "npm run lambda:install --workspace=infrastructure",
+    "fresh-install": "npm run clean && npm run install:all",
+    "postinstall": "npm run lambda:install --workspace=infrastructure"
+  },
+  "overrides": {
+    "@testing-library/react": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "react-error-boundary": "^6.0.0"
+  }
+}

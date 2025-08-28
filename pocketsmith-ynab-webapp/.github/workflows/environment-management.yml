@@ -1,0 +1,75 @@
+name: Environment Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+        - deploy
+        - destroy
+        - status
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  environment-action:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        
+    - name: Deploy Infrastructure
+      if: github.event.inputs.action == 'deploy'
+      run: |
+        cd infrastructure
+        npm ci
+        npx cdk deploy --require-approval never --context environment=${{ github.event.inputs.environment }}
+        
+    - name: Destroy Infrastructure
+      if: github.event.inputs.action == 'destroy'
+      run: |
+        cd infrastructure
+        npm ci
+        npx cdk destroy --force --context environment=${{ github.event.inputs.environment }}
+        
+    - name: Check Environment Status
+      if: github.event.inputs.action == 'status'
+      run: |
+        cd infrastructure
+        npm ci
+        npx cdk list --context environment=${{ github.event.inputs.environment }}
+        npx cdk diff --context environment=${{ github.event.inputs.environment }}
+        
+    - name: Notify completion
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: 'Environment ${{ github.event.inputs.action }} for ${{ github.event.inputs.environment }}: ${{ job.status }}'

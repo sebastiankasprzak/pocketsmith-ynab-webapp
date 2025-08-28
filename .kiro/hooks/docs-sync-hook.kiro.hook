@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "name": "Documentation Sync",
+  "description": "Listens to TypeScript source files, configuration files, and shell scripts in the repository and triggers documentation updates in README files when changes occur",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "**/package.json",
+      "**/tsconfig*.json",
+      "**/*.config.js",
+      "**/*.config.ts",
+      "*.sh",
+      "**/jest.config.js",
+      "**/vite.config.ts",
+      "**/vitest*.config.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source code files have been modified in this TypeScript project. Please review the changes and update the documentation accordingly. Focus on updating the main README.md file and any README files in subdirectories (like infrastructure/README.md and pocketsmith-ynab-webapp/README.md) to reflect any new features, API changes, configuration updates, or architectural modifications. Also update the DEPLOYMENT.md file if deployment-related code has changed."
+  }
+}
