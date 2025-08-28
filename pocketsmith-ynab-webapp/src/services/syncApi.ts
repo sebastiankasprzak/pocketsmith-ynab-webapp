@@ -129,6 +129,39 @@ export interface SyncTriggerResponse {
   };
 }
 
+// DynamoDB Sync State interfaces
+export interface SyncStateAccount {
+  account_id: string;
+  last_sync: string | null;
+  processed_transactions_count: number;
+  last_updated: string;
+}
+
+export interface SyncStateOverview {
+  accounts: SyncStateAccount[];
+  total_accounts: number;
+  total_processed_transactions: number;
+  last_activity: string | null;
+  lastUpdated: string;
+}
+
+export interface RecentTransactionActivity {
+  account_id: string;
+  recent_transactions: Array<{
+    transaction_id: string;
+    processed_at: string;
+  }>;
+  count: number;
+}
+
+export interface RecentActivityResponse {
+  recent_activity: RecentTransactionActivity[];
+  parameters: {
+    hours: number;
+  };
+  lastUpdated: string;
+}
+
 class SyncApiService {
   constructor() {
     // No need to store baseURL since apiClient handles it
@@ -143,6 +176,31 @@ class SyncApiService {
       return response.data;
     } catch (error: any) {
       this.handleApiError(error, 'Failed to get sync status');
+    }
+  }
+
+  /**
+   * Get real-time sync status from DynamoDB (faster than CloudWatch)
+   */
+  async getRealTimeSyncStatus(syncId?: string): Promise<SyncStatus> {
+    try {
+      const endpoint = syncId ? `/sync/realtime/${syncId}` : '/sync/realtime/current';
+      const response = await apiClient.get<SyncStatus>(endpoint);
+      return response.data;
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to get real-time sync status');
+    }
+  }
+
+  /**
+   * Get all active syncs
+   */
+  async getActiveSyncs(): Promise<SyncStatus[]> {
+    try {
+      const response = await apiClient.get<SyncStatus[]>('/sync/active');
+      return response.data;
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to get active syncs');
     }
   }
 
@@ -214,6 +272,44 @@ class SyncApiService {
   }
 
   /**
+   * Get sync state overview from DynamoDB
+   */
+  async getSyncStateOverview(): Promise<SyncStateOverview> {
+    try {
+      const response = await apiClient.get<SyncStateOverview>('/sync/state/overview');
+      return response.data;
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to get sync state overview');
+    }
+  }
+
+  /**
+   * Get sync state for a specific account
+   */
+  async getAccountSyncState(accountId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/sync/state/account/${accountId}`);
+      return response.data;
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to get account sync state');
+    }
+  }
+
+  /**
+   * Get recent transaction activity from DynamoDB
+   */
+  async getRecentActivity(hours: number = 24): Promise<RecentActivityResponse> {
+    try {
+      const response = await apiClient.get<RecentActivityResponse>('/sync/state/recent-activity', {
+        params: { hours }
+      });
+      return response.data;
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to get recent activity');
+    }
+  }
+
+  /**
    * Handle API errors with standardized error messages
    */
   private handleApiError(error: ApiError, defaultMessage: string): never {
@@ -229,3 +325,6 @@ class SyncApiService {
 
 export const syncApiService = new SyncApiService();
 export default syncApiService;
+
+// Re-export types for easier importing
+export type { SyncStateAccount, SyncStateOverview, RecentTransactionActivity, RecentActivityResponse };

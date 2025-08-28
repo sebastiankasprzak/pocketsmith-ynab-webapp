@@ -1,5 +1,5 @@
 {
-  "name": "pocketsmith-ynab-webapp",
+  "name": "pocketsmith-ynab-sync",
   "private": true,
   "version": "0.0.0",
   "type": "module",

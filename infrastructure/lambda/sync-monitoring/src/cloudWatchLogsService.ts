@@ -28,11 +28,18 @@ export class CloudWatchLogsService {
       // Try to parse as JSON first (structured logging)
       if (message.trim().startsWith('{')) {
         const parsed = JSON.parse(message);
+
+        // Handle new structured logging format
+        if (parsed.event_type) {
+          return this.parseStructuredLogEntry(parsed, timestamp);
+        }
+
+        // Handle existing JSON format
         return {
           timestamp,
           level: parsed.level || 'INFO',
           message: parsed.message || message,
-          requestId: parsed.requestId,
+          requestId: parsed.requestId || parsed.sync_id,
           transactionCount: parsed.transactionCount,
           errorDetails: parsed.error,
           duration: parsed.duration,
@@ -45,30 +52,30 @@ export class CloudWatchLogsService {
         requestStart: /START RequestId: ([a-f0-9-]+)/,
         requestEnd: /END RequestId: ([a-f0-9-]+)/,
         requestReport: /REPORT RequestId: ([a-f0-9-]+).*?Duration: ([\d.]+) ms/,
-        
+
         // Transaction processing patterns - more comprehensive
         transactionsFetched: /(?:Fetched|Retrieved|Found|Got)\s+(\d+)\s+transactions?/i,
         transactionsProcessed: /(?:Processed|Imported|Synced|Updated)\s+(\d+)\s+transactions?/i,
         transactionsFailed: /(?:Failed|Error|Unable)\s+(?:to\s+)?(?:process|import|sync)\s+(\d+)\s+transactions?/i,
         duplicatesSkipped: /(?:Skipped|Ignored|Duplicate)\s+(\d+)\s+(?:duplicate\s+)?transactions?/i,
-        
+
         // Additional transaction patterns
         transactionCount: /(\d+)\s+transactions?\s+(?:successfully\s+)?(?:processed|imported|synced|fetched)/i,
         successfulSync: /(?:Successfully\s+)?(?:synced|imported|processed)\s+(\d+)/i,
-        
+
         // Error patterns - more comprehensive
         error: /(ERROR|Error|error|FAILED|Failed|failed).*?:?\s*(.*)/,
         exception: /(Exception|exception|EXCEPTION).*?:?\s*(.*)/,
-        
+
         // Status patterns - expanded
         syncStarted: /(?:Starting|Begin|Initiating)\s+(?:sync|import|fetch|process)/i,
         syncCompleted: /(?:Sync|Import|Process|Fetch)\s+(?:operation\s+)?(?:completed|finished|done|successful)/i,
         syncFailed: /(?:Sync|Import|Process|Fetch)\s+(?:operation\s+)?(?:failed|error|unsuccessful)/i,
-        
+
         // YNAB specific patterns
         ynabImport: /YNAB.*?(?:import|sync|update).*?(\d+)/i,
         ynabSuccess: /Successfully.*?YNAB.*?(\d+)/i,
-        
+
         // PocketSmith specific patterns
         pocketsmithFetch: /PocketSmith.*?(?:fetch|retrieve).*?(\d+)/i,
         pocketsmithSuccess: /Successfully.*?PocketSmith.*?(\d+)/i,
@@ -162,6 +169,84 @@ export class CloudWatchLogsService {
   }
 
   /**
+   * Parse structured log entries from new logging format
+   */
+  private parseStructuredLogEntry(parsed: any, timestamp: string): ParsedLogEntry {
+    const entry: ParsedLogEntry = {
+      timestamp,
+      level: this.mapEventTypeToLevel(parsed.event_type),
+      message: this.createMessageFromStructuredLog(parsed),
+      requestId: parsed.sync_id,
+    };
+
+    // Extract transaction counts from progress data
+    if (parsed.progress) {
+      entry.transactionCount = parsed.progress.transactions_processed ||
+        parsed.progress.transactions_fetched ||
+        parsed.progress.transaction_count;
+    }
+
+    // Extract final stats
+    if (parsed.final_stats) {
+      entry.transactionCount = parsed.final_stats.total_transactions ||
+        parsed.final_stats.transactions_processed;
+    }
+
+    // Extract error information
+    if (parsed.error) {
+      entry.level = 'ERROR';
+      entry.errorDetails = parsed.error.message;
+    }
+
+    // Extract duration if available
+    if (parsed.duration_seconds) {
+      entry.duration = parsed.duration_seconds * 1000; // Convert to milliseconds
+    }
+
+    return entry;
+  }
+
+  /**
+   * Map event types to log levels
+   */
+  private mapEventTypeToLevel(eventType: string): string {
+    switch (eventType) {
+      case 'sync_failed':
+        return 'ERROR';
+      case 'sync_started':
+      case 'sync_completed':
+        return 'INFO';
+      case 'sync_progress':
+      case 'account_processed':
+        return 'DEBUG';
+      default:
+        return 'INFO';
+    }
+  }
+
+  /**
+   * Create human-readable message from structured log
+   */
+  private createMessageFromStructuredLog(parsed: any): string {
+    switch (parsed.event_type) {
+      case 'sync_started':
+        return `Sync started: ${parsed.sync_id}`;
+      case 'sync_progress':
+        const progress = parsed.progress;
+        return `Progress: ${progress.accounts_processed}/${progress.total_accounts} accounts, ${progress.transactions_processed || 0} transactions processed`;
+      case 'sync_completed':
+        const stats = parsed.final_stats;
+        return `Sync completed: ${stats.total_transactions || 0} transactions processed in ${stats.duration_seconds || 0}s`;
+      case 'sync_failed':
+        return `Sync failed: ${parsed.error.message}`;
+      case 'account_processed':
+        return `Account processed: ${parsed.account_name} (${parsed.transaction_count} transactions)`;
+      default:
+        return JSON.stringify(parsed);
+    }
+  }
+
+  /**
    * Get recent log events from a specific log group
    */
   async getRecentLogEvents(
@@ -179,7 +264,7 @@ export class CloudWatchLogsService {
       });
 
       const response = await this.client.send(command);
-      
+
       return (response.events || []).map(event => ({
         timestamp: event.timestamp || 0,
         message: event.message || '',
@@ -254,12 +339,12 @@ export class CloudWatchLogsService {
       try {
         console.log(`Fetching events from log group: ${logGroupName}`);
         const events = await this.getRecentLogEvents(logGroupName, startTime, endTime, Math.min(limit * 2, 200));
-        
+
         console.log(`Found ${events.length} events in ${logGroupName}`);
 
         // Group events by request ID to create sync entries
         const requestGroups = new Map<string, LogEvent[]>();
-        
+
         for (const event of events) {
           const parsed = this.parseLogMessage(event.message, new Date(event.timestamp).toISOString());
           if (parsed?.requestId) {
@@ -321,13 +406,13 @@ export class CloudWatchLogsService {
 
     const lowerMessage = message.toLowerCase();
     return syncKeywords.some(keyword => lowerMessage.includes(keyword)) &&
-           (lowerMessage.includes('completed') || 
-            lowerMessage.includes('processed') || 
-            lowerMessage.includes('fetched') ||
-            lowerMessage.includes('imported') ||
-            lowerMessage.includes('success') ||
-            lowerMessage.includes('failed') ||
-            lowerMessage.includes('error'));
+      (lowerMessage.includes('completed') ||
+        lowerMessage.includes('processed') ||
+        lowerMessage.includes('fetched') ||
+        lowerMessage.includes('imported') ||
+        lowerMessage.includes('success') ||
+        lowerMessage.includes('failed') ||
+        lowerMessage.includes('error'));
   }
 
   /**
@@ -390,10 +475,10 @@ export class CloudWatchLogsService {
     // If we don't have explicit transaction counts, try to infer from the presence of sync-related events
     if (transactionsFetched === 0 && transactionsProcessed === 0 && transactionsFailed === 0) {
       // Look for any indication of sync activity
-      const hasSyncActivity = sortedEvents.some(event => 
+      const hasSyncActivity = sortedEvents.some(event =>
         this.isSyncRelatedEvent(event.message)
       );
-      
+
       if (hasSyncActivity) {
         // Assume at least some activity happened, even if we can't quantify it
         transactionsProcessed = 1; // Placeholder to indicate activity
@@ -447,7 +532,7 @@ export class CloudWatchLogsService {
   }> {
     // Look at logs from the last hour to determine current status
     const recentHistory = await this.getSyncHistory(1, 10);
-    
+
     if (recentHistory.length === 0) {
       return {
         status: 'idle',
@@ -458,15 +543,15 @@ export class CloudWatchLogsService {
     }
 
     const latestEntry = recentHistory[0];
-    
+
     // Check if there's an active sync (recent START without corresponding END)
     const now = new Date();
     const latestTime = new Date(latestEntry.timestamp);
     const timeDiff = now.getTime() - latestTime.getTime();
-    
+
     // If the latest entry is less than 5 minutes old and has no duration, consider it running
     const isRunning = timeDiff < 5 * 60 * 1000 && latestEntry.duration === 0;
-    
+
     return {
       status: isRunning ? 'running' : latestEntry.status === 'failed' ? 'failed' : 'completed',
       lastSyncTime: latestEntry.timestamp,
@@ -511,7 +596,7 @@ export class CloudWatchLogsService {
       });
 
       const eventsResponse = await this.client.send(eventsCommand);
-      
+
       for (const event of eventsResponse.events || []) {
         callback({
           timestamp: event.timestamp || 0,

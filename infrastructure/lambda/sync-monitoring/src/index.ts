@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { CloudWatchLogsService } from './cloudWatchLogsService';
 import { SQSMonitoringService } from './sqsMonitoringService';
+import { DynamoDbSyncStateService } from './dynamoDbSyncStateService';
 import {
   SyncMonitoringResult,
   SyncStatus,
@@ -14,6 +15,7 @@ import { requireAuth, createAuthErrorResponse, AuthError } from './authUtils';
 
 const logsService = new CloudWatchLogsService();
 const sqsService = new SQSMonitoringService();
+const dynamoDbService = new DynamoDbSyncStateService();
 const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
 
 const corsHeaders = {
@@ -378,6 +380,105 @@ async function handleSyncTrigger(event: APIGatewayProxyEvent): Promise<APIGatewa
 }
 
 /**
+ * Get sync state overview from DynamoDB
+ */
+async function handleSyncStateOverview(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Validate authentication
+    const user = await requireAuth(event);
+    console.log(`Handling sync state overview request for user: ${user.userId}`);
+
+    const overview = await dynamoDbService.getSyncStateOverview();
+
+    return createResponse(200, {
+      ...overview,
+      lastUpdated: new Date().toISOString(),
+    });
+
+  } catch (error: any) {
+    console.error('Error handling sync state overview request:', error);
+    
+    if (error.name === 'AccessDenied') {
+      return createErrorResponse(403, 'ACCESS_DENIED', 'Insufficient permissions to access DynamoDB');
+    } else if (error.name === 'ResourceNotFoundException') {
+      return createErrorResponse(404, 'RESOURCE_NOT_FOUND', 'DynamoDB sync state table not found');
+    }
+    
+    return createErrorResponse(500, 'INTERNAL_ERROR', 'Failed to get sync state overview', error.message);
+  }
+}
+
+/**
+ * Get detailed sync state for a specific account
+ */
+async function handleAccountSyncState(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Validate authentication
+    const user = await requireAuth(event);
+    console.log(`Handling account sync state request for user: ${user.userId}`);
+
+    const accountId = event.pathParameters?.accountId;
+    if (!accountId) {
+      return createErrorResponse(400, 'MISSING_PARAMETER', 'Account ID is required');
+    }
+
+    const syncState = await dynamoDbService.getAccountSyncState(accountId);
+
+    return createResponse(200, {
+      account_id: accountId,
+      sync_state: syncState,
+      lastUpdated: new Date().toISOString(),
+    });
+
+  } catch (error: any) {
+    console.error('Error handling account sync state request:', error);
+    
+    if (error.name === 'AccessDenied') {
+      return createErrorResponse(403, 'ACCESS_DENIED', 'Insufficient permissions to access DynamoDB');
+    }
+    
+    return createErrorResponse(500, 'INTERNAL_ERROR', 'Failed to get account sync state', error.message);
+  }
+}
+
+/**
+ * Get recent transaction activity from DynamoDB
+ */
+async function handleRecentActivity(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Validate authentication
+    const user = await requireAuth(event);
+    console.log(`Handling recent activity request for user: ${user.userId}`);
+
+    const hours = parseInt(event.queryStringParameters?.hours || '24', 10);
+    
+    // Validate hours parameter
+    if (hours < 1 || hours > 168) { // Max 1 week
+      return createErrorResponse(400, 'INVALID_PARAMETER', 'Hours must be between 1 and 168');
+    }
+
+    const recentActivity = await dynamoDbService.getRecentTransactionActivity(hours);
+
+    return createResponse(200, {
+      recent_activity: recentActivity,
+      parameters: {
+        hours,
+      },
+      lastUpdated: new Date().toISOString(),
+    });
+
+  } catch (error: any) {
+    console.error('Error handling recent activity request:', error);
+    
+    if (error.name === 'AccessDenied') {
+      return createErrorResponse(403, 'ACCESS_DENIED', 'Insufficient permissions to access DynamoDB');
+    }
+    
+    return createErrorResponse(500, 'INTERNAL_ERROR', 'Failed to get recent activity', error.message);
+  }
+}
+
+/**
  * Health check for monitoring infrastructure
  */
 async function handleHealthCheck(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -440,6 +541,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return await handleLogStream(event);
     } else if (path === '/sync/health' && method === 'GET') {
       return await handleHealthCheck(event);
+    } else if (path === '/sync/state/overview' && method === 'GET') {
+      return await handleSyncStateOverview(event);
+    } else if (path.startsWith('/sync/state/account/') && method === 'GET') {
+      return await handleAccountSyncState(event);
+    } else if (path === '/sync/state/recent-activity' && method === 'GET') {
+      return await handleRecentActivity(event);
     } else {
       return createErrorResponse(404, 'NOT_FOUND', `Path not found: ${method} ${path}`);
     }

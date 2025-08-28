@@ -29,13 +29,25 @@ import SyncHistorySection from '../components/SyncHistorySection';
 import SyncHistorySummary from '../components/SyncHistorySummary';
 import ManualSyncDialog from '../components/ManualSyncDialog';
 import { SyncProgressTracker } from '../components/SyncProgressTracker';
+import ModernSyncStatusCard from '../components/ModernSyncStatusCard';
+import AccountSyncStateTable from '../components/AccountSyncStateTable';
+import RecentActivityCard from '../components/RecentActivityCard';
 import { syncApiService } from '../services/syncApi';
-import type { SyncMonitoringResult, SyncHistoryEntry, SyncTriggerResponse } from '../services/syncApi';
+import type { 
+  SyncMonitoringResult, 
+  SyncHistoryEntry, 
+  SyncTriggerResponse,
+  SyncStateOverview,
+  RecentActivityResponse
+} from '../services/syncApi';
 import { formatTimestamp, formatTooltipTimestamp, formatTableTimestamp } from '../utils/dateUtils';
 
 export const SyncStatus: React.FC = () => {
   const [syncData, setSyncData] = useState<SyncMonitoringResult | null>(null);
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
+  const [syncStateOverview, setSyncStateOverview] = useState<SyncStateOverview | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityResponse | null>(null);
+  const [activityHours, setActivityHours] = useState(24);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,13 +63,17 @@ export const SyncStatus: React.FC = () => {
   const fetchSyncData = useCallback(async () => {
     try {
       setError(null);
-      const [statusData, historyData] = await Promise.all([
+      const [statusData, historyData, stateOverview, activityData] = await Promise.all([
         syncApiService.getSyncStatus(),
-        syncApiService.getSyncHistory(168, 200) // 7 days (168 hours), 200 entries
+        syncApiService.getSyncHistory(168, 200), // 7 days (168 hours), 200 entries
+        syncApiService.getSyncStateOverview(),
+        syncApiService.getRecentActivity(activityHours)
       ]);
 
       setSyncData(statusData);
       setSyncHistory(historyData.history);
+      setSyncStateOverview(stateOverview);
+      setRecentActivity(activityData);
       setLastUpdated(new Date());
     } catch (err: any) {
       setError(err.message);
@@ -65,7 +81,7 @@ export const SyncStatus: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [activityHours]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -101,6 +117,10 @@ export const SyncStatus: React.FC = () => {
 
   const handleAutoRefreshToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     setAutoRefresh(event.target.checked);
+  };
+
+  const handleActivityHoursChange = (hours: number) => {
+    setActivityHours(hours);
   };
 
   // Enhanced auto-refresh with configurable intervals
@@ -213,9 +233,40 @@ export const SyncStatus: React.FC = () => {
           </Alert>
         )}
 
+        {/* Modern DynamoDB-based Sync State Overview */}
+        {syncStateOverview && (
+          <ModernSyncStatusCard
+            syncStateOverview={syncStateOverview}
+            onRefresh={handleRefresh}
+            loading={refreshing}
+          />
+        )}
+
+        {/* Recent Activity from DynamoDB */}
+        {recentActivity && (
+          <Box mb={3}>
+            <RecentActivityCard
+              recentActivity={recentActivity.recent_activity}
+              hours={activityHours}
+              onHoursChange={handleActivityHoursChange}
+              loading={refreshing}
+            />
+          </Box>
+        )}
+
+        {/* Detailed Account Sync State Table */}
+        {syncStateOverview && (
+          <Box mb={3}>
+            <AccountSyncStateTable
+              accounts={syncStateOverview.accounts}
+              loading={refreshing}
+            />
+          </Box>
+        )}
+
         {syncData && (
           <Box>
-            {/* Dashboard Overview Cards */}
+            {/* Legacy Dashboard Overview Cards - keeping for comparison */}
             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }} gap={3} mb={3}>
               <Card>
                 <CardContent>

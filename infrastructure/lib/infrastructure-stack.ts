@@ -171,6 +171,18 @@ export class InfrastructureStack extends cdk.Stack {
                 `arn:aws:lambda:${this.region}:${this.account}:function:dev-pocketsmith-transaction-*`,
               ],
             }),
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                'dynamodb:Scan',
+                'dynamodb:Query',
+                'dynamodb:GetItem',
+                'dynamodb:BatchGetItem',
+              ],
+              resources: [
+                `arn:aws:dynamodb:${this.region}:${this.account}:table/dev-pocketsmith-ynab-sync-state`,
+              ],
+            }),
           ],
         }),
       },
@@ -213,7 +225,8 @@ export class InfrastructureStack extends cdk.Stack {
       environment: {
         NODE_ENV: 'production',
         COGNITO_USER_POOL_ID: userPool.userPoolId,
-        COGNITO_USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId
+        COGNITO_USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
+        SYNC_STATE_TABLE_NAME: 'dev-pocketsmith-ynab-sync-state'
       }
     });
 
@@ -251,6 +264,13 @@ export class InfrastructureStack extends cdk.Stack {
     const syncLogsResource = syncResource.addResource('logs');
     const syncLogsStreamResource = syncLogsResource.addResource('stream');
     const syncHealthResource = syncResource.addResource('health');
+    
+    // DynamoDB sync state endpoints
+    const syncStateResource = syncResource.addResource('state');
+    const syncStateOverviewResource = syncStateResource.addResource('overview');
+    const syncStateAccountResource = syncStateResource.addResource('account');
+    const syncStateAccountIdResource = syncStateAccountResource.addResource('{accountId}');
+    const syncStateRecentActivityResource = syncStateResource.addResource('recent-activity');
 
     // Add a health check endpoint that doesn't require authentication
     const healthResource = api.root.addResource('health');
@@ -348,6 +368,20 @@ export class InfrastructureStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.COGNITO
     });
     syncHealthResource.addMethod('GET', syncIntegration, {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    
+    // DynamoDB sync state endpoints - require authentication
+    syncStateOverviewResource.addMethod('GET', syncIntegration, {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    syncStateAccountIdResource.addMethod('GET', syncIntegration, {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    syncStateRecentActivityResource.addMethod('GET', syncIntegration, {
       authorizer: cognitoAuthorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO
     });

@@ -35,7 +35,7 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useAccounts, useMappings, useSaveMappings, useDeleteMapping, useValidateMappings, useUpdateMappingConfig } from '../hooks/useAccountMappings';
-import { MappingConfigurationCard } from '../components/MappingConfigurationCard';
+import { ImprovedMappingConfigurationCard } from '../components/ImprovedMappingConfigurationCard';
 import { ImprovedMappingCard } from '../components/ImprovedMappingCard';
 import { validateMappings } from '../utils/mappingValidation';
 import type { AccountMappingCreate, PocketSmithAccount, YNABAccount } from '../types/accounts';
@@ -119,20 +119,16 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
         </Box>
       </DialogTitle>
       
-      <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: { xs: 3, sm: 4 } }}>
-        <Stack spacing={4}>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 3 }}>
+        <Grid container spacing={3}>
           {/* PocketSmith Account Selection */}
-          <Box>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-              Select PocketSmith Account
-            </Typography>
-            <FormControl fullWidth size="large">
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
               <InputLabel>PocketSmith Account</InputLabel>
               <Select
                 value={pocketsmithAccountId}
                 onChange={(e) => setPocketsmithAccountId(e.target.value)}
                 label="PocketSmith Account"
-                sx={{ minHeight: 56 }}
                 MenuProps={{
                   PaperProps: {
                     style: {
@@ -183,20 +179,16 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
                 </Paper>
               </Fade>
             )}
-          </Box>
+          </Grid>
 
           {/* YNAB Account Selection */}
-          <Box>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-              Select YNAB Account
-            </Typography>
-            <FormControl fullWidth size="large">
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
               <InputLabel>YNAB Account</InputLabel>
               <Select
                 value={ynabAccountId}
                 onChange={(e) => setYnabAccountId(e.target.value)}
                 label="YNAB Account"
-                sx={{ minHeight: 56 }}
                 MenuProps={{
                   PaperProps: {
                     style: {
@@ -247,48 +239,46 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
                 </Paper>
               </Fade>
             )}
-          </Box>
+          </Grid>
+        </Grid>
 
-          {/* Mapping Preview */}
-          {selectedPsAccount && selectedYnabAccount && (
-            <Fade in={!!(selectedPsAccount && selectedYnabAccount)}>
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-                  Mapping Preview
+        {/* Mapping Preview */}
+        {selectedPsAccount && selectedYnabAccount && (
+          <Fade in={!!(selectedPsAccount && selectedYnabAccount)}>
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Mapping Preview
+              </Typography>
+              <Paper
+                sx={{
+                  p: 2,
+                  backgroundColor: alpha(theme.palette.success.main, 0.05),
+                  border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <CheckCircleIcon color="success" />
+                <Typography variant="body2">
+                  <strong>{selectedPsAccount.title}</strong> will sync to <strong>{selectedYnabAccount.name}</strong>
                 </Typography>
-                <Paper
-                  sx={{
-                    p: 3,
-                    backgroundColor: alpha(theme.palette.success.main, 0.05),
-                    border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                  }}
-                >
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="body1">
-                    <strong>{selectedPsAccount.title}</strong> will sync to <strong>{selectedYnabAccount.name}</strong>
-                  </Typography>
-                </Paper>
-              </Box>
-            </Fade>
-          )}
-        </Stack>
+              </Paper>
+            </Box>
+          </Fade>
+        )}
       </DialogContent>
       
       <DialogActions sx={{
-        px: { xs: 3, sm: 4 },
-        pb: { xs: 3, sm: 3 },
-        pt: 2,
-        gap: 2,
+        px: { xs: 2, sm: 3 },
+        pb: { xs: 2, sm: 2 },
+        gap: 1,
         flexDirection: { xs: 'column', sm: 'row' }
       }}>
         <Button
           onClick={handleClose}
           fullWidth={isMobile}
           size="large"
-          sx={{ minHeight: 48 }}
         >
           Cancel
         </Button>
@@ -299,7 +289,6 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
           fullWidth={isMobile}
           size="large"
           startIcon={<AddIcon />}
-          sx={{ minHeight: 48, minWidth: { sm: 180 } }}
         >
           Create Mapping
         </Button>
@@ -308,7 +297,7 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
   );
 };
 
-export const AccountMappings: React.FC = () => {
+export const ImprovedAccountMappings: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -367,7 +356,7 @@ export const AccountMappings: React.FC = () => {
   const handleSaveMappings = async () => {
     if (pendingMappings.length === 0) return;
 
-    // First, perform client-side validation
+    // Client-side validation
     if (accountsData && mappingsData && mappingsData.mappings) {
       const existingMappings = mappingsData.mappings.map(m => ({
         pocketsmithAccountId: m.pocketsmithAccountId,
@@ -386,11 +375,6 @@ export const AccountMappings: React.FC = () => {
           : 'Unknown validation error';
         showSnackbar(`Validation failed: ${errorMessage}`, 'error');
         return;
-      }
-
-      // Show warnings if any
-      if (clientValidation.warnings.length > 0) {
-        // You could show warnings to the user here if desired
       }
     }
 
@@ -458,12 +442,7 @@ export const AccountMappings: React.FC = () => {
   const totalMappings = (mappingsData?.mappings?.length || 0) + pendingMappings.length;
 
   return (
-    <Box sx={{ 
-      position: 'relative', 
-      pb: isMobile ? 10 : 0,
-      maxWidth: '100%',
-      overflow: 'hidden'
-    }}>
+    <Box sx={{ position: 'relative', pb: isMobile ? 10 : 0 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
@@ -545,20 +524,6 @@ export const AccountMappings: React.FC = () => {
           </Grid>
         </Grid>
 
-        {/* Mobile Add Mapping Button */}
-        <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
-          <Button
-            variant="contained"
-            onClick={() => setNewMappingDialogOpen(true)}
-            startIcon={<AddIcon />}
-            disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
-            fullWidth
-            size="large"
-          >
-            Add New Mapping
-          </Button>
-        </Box>
-
         {/* Action Buttons */}
         <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
           <Button
@@ -569,22 +534,12 @@ export const AccountMappings: React.FC = () => {
           >
             Refresh
           </Button>
-          <Button
-            variant="contained"
-            onClick={() => setNewMappingDialogOpen(true)}
-            startIcon={<AddIcon />}
-            disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
-          >
-            Add Mapping
-          </Button>
           {pendingMappings.length > 0 && (
             <Button
               variant="contained"
               onClick={handleSaveMappings}
               disabled={saveMappingsMutation.isPending}
               sx={{ minWidth: 140 }}
-              color="success"
             >
               Save Changes ({pendingMappings.length})
             </Button>
@@ -595,7 +550,7 @@ export const AccountMappings: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {/* Configuration Settings */}
         {mappingsData?.config && accountsData?.ynabAccounts && (
-          <MappingConfigurationCard
+          <ImprovedMappingConfigurationCard
             config={mappingsData.config}
             ynabAccounts={accountsData.ynabAccounts}
             onSave={handleConfigSave}
@@ -627,41 +582,20 @@ export const AccountMappings: React.FC = () => {
                   onClick={() => setNewMappingDialogOpen(true)}
                   startIcon={<AddIcon />}
                   disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
-                  size="large"
-                  sx={{ minWidth: 200 }}
                 >
                   Create First Mapping
                 </Button>
-                {(availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0) && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                    {availableAccounts.pocketsmith.length === 0 && availableAccounts.ynab.length === 0
-                      ? 'No accounts available from either PocketSmith or YNAB'
-                      : availableAccounts.pocketsmith.length === 0
-                      ? 'No PocketSmith accounts available'
-                      : 'No YNAB accounts available'
-                    }
-                  </Typography>
-                )}
               </Box>
             ) : (
-              <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+              <Grid container spacing={3}>
                 {/* Existing mappings */}
                 {mappingsData?.mappings?.map((mapping) => (
-                  <Grid 
-                    item 
-                    xs={12} 
-                    sm={6} 
-                    lg={4} 
-                    key={mapping.pocketsmithAccountId} 
-                    sx={{ display: 'flex', height: 'auto' }}
-                  >
-                    <Box sx={{ width: '100%', display: 'flex' }}>
-                      <ImprovedMappingCard
-                        mapping={mapping}
-                        onDelete={handleDeleteMapping}
-                        isDeleting={deleteMappingMutation.isPending}
-                      />
-                    </Box>
+                  <Grid item xs={12} lg={6} key={mapping.pocketsmithAccountId}>
+                    <ImprovedMappingCard
+                      mapping={mapping}
+                      onDelete={handleDeleteMapping}
+                      isDeleting={deleteMappingMutation.isPending}
+                    />
                   </Grid>
                 ))}
 
@@ -683,21 +617,12 @@ export const AccountMappings: React.FC = () => {
                   };
 
                   return (
-                    <Grid 
-                      item 
-                      xs={12} 
-                      sm={6} 
-                      lg={4} 
-                      key={`pending-${index}`} 
-                      sx={{ display: 'flex', height: 'auto' }}
-                    >
-                      <Box sx={{ width: '100%', display: 'flex' }}>
-                        <ImprovedMappingCard
-                          mapping={pendingMapping}
-                          onDelete={() => handleRemovePendingMapping(index)}
-                          isPending={true}
-                        />
-                      </Box>
+                    <Grid item xs={12} lg={6} key={`pending-${index}`}>
+                      <ImprovedMappingCard
+                        mapping={pendingMapping}
+                        onDelete={() => handleRemovePendingMapping(index)}
+                        isPending={true}
+                      />
                     </Grid>
                   );
                 })}

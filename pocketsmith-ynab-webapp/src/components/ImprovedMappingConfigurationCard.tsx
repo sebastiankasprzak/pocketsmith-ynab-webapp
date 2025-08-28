@@ -30,14 +30,14 @@ import {
 } from '@mui/icons-material';
 import type { YNABAccount, ExistingAccountMappingConfig } from '../types/accounts';
 
-interface MappingConfigurationCardProps {
+interface ImprovedMappingConfigurationCardProps {
   config: ExistingAccountMappingConfig;
   ynabAccounts: YNABAccount[];
   onSave: (config: { default_account_id?: string; strict_mode: boolean }) => Promise<void>;
   isLoading?: boolean;
 }
 
-export const MappingConfigurationCard: React.FC<MappingConfigurationCardProps> = ({
+export const ImprovedMappingConfigurationCard: React.FC<ImprovedMappingConfigurationCardProps> = ({
   config,
   ynabAccounts,
   onSave,
