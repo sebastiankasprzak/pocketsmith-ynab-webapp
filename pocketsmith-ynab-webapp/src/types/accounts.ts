@@ -97,6 +97,7 @@ export interface YNABBudget {
 export interface AccountsResponse {
   pocketsmithAccounts: PocketSmithAccount[];
   ynabAccounts: YNABAccount[];
+  currentBudgetId?: string;
 }
 
 export interface BudgetsResponse {

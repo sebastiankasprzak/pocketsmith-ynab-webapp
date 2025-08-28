@@ -31,7 +31,7 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
   currentBudgetId,
   onBudgetChange,
 }) => {
-  const [selectedBudgetId, setSelectedBudgetId] = useState('');
+  const [, setSelectedBudgetId] = useState('');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<YNABBudget | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -109,53 +109,88 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
     <Box>
       <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
         <BudgetIcon color="primary" />
-        YNAB Budget
+        YNAB Budget Selection
       </Typography>
 
-      {currentBudget && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Currently using budget: <strong>{currentBudget.name}</strong>
+      {/* Current Budget Display */}
+      {currentBudget ? (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Current Budget:
+          </Typography>
+          <Box
+            sx={{
+              p: 2,
+              border: '2px solid',
+              borderColor: 'success.main',
+              borderRadius: 2,
+              backgroundColor: 'success.50',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <CheckIcon color="success" />
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1" sx={{ fontWeight: 600, color: 'success.dark' }}>
+                {currentBudget.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {currentBudget.currency_format.iso_code} • Last modified: {new Date(currentBudget.last_modified_on).toLocaleDateString()}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      ) : (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          No budget is currently selected. Please select a budget to continue.
         </Alert>
       )}
 
-      <FormControl fullWidth>
-        <InputLabel>Select YNAB Budget</InputLabel>
-        <Select
-          value=""
-          onChange={(e) => handleBudgetSelect(e.target.value)}
-          label="Select YNAB Budget"
-          disabled={updateBudgetMutation.isPending}
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 300,
+      {/* Budget Selection */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+          Change Budget:
+        </Typography>
+        <FormControl fullWidth>
+          <InputLabel>Select Different YNAB Budget</InputLabel>
+          <Select
+            value=""
+            onChange={(e) => handleBudgetSelect(e.target.value)}
+            label="Select Different YNAB Budget"
+            disabled={updateBudgetMutation.isPending}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 300,
+                },
               },
-            },
-          }}
-        >
-          {budgetsData.budgets.map((budget) => (
-            <MenuItem 
-              key={budget.id} 
-              value={budget.id}
-              disabled={budget.id === currentBudgetId}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                {budget.id === currentBudgetId && <CheckIcon color="success" />}
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {budget.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {budget.currency_format.iso_code} • Last modified: {new Date(budget.last_modified_on).toLocaleDateString()}
-                  </Typography>
+            }}
+          >
+            {budgetsData.budgets.map((budget) => (
+              <MenuItem 
+                key={budget.id} 
+                value={budget.id}
+                disabled={budget.id === currentBudgetId}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                  {budget.id === currentBudgetId && <CheckIcon color="success" />}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {budget.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {budget.currency_format.iso_code} • Last modified: {new Date(budget.last_modified_on).toLocaleDateString()}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
         Changing the budget will reload all account mappings and may require reconfiguration.
       </Typography>
 

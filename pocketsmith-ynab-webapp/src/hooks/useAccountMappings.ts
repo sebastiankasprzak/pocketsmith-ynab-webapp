@@ -3,8 +3,7 @@ import { accountsApi } from '../services/accountsApi';
 import type {
   AccountsResponse,
   MappingsResponse,
-  AccountMappingCreate,
-  BudgetsResponse
+  AccountMappingCreate
 } from '../types/accounts';
 
 // Query keys

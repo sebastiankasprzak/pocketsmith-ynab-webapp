@@ -38,7 +38,8 @@ const realApi = {
 
       return {
         pocketsmithAccounts: pocketsmithResponse.data.accounts,
-        ynabAccounts: ynabResponse.data.accounts
+        ynabAccounts: ynabResponse.data.accounts,
+        currentBudgetId: ynabResponse.data.budgetId
       };
     } catch (error: any) {
       this.handleApiError(error, 'Failed to fetch accounts');

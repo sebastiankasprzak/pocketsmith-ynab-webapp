@@ -608,7 +608,14 @@ export const AccountMappings: React.FC = () => {
         {/* Budget Selection */}
         <Card>
           <CardContent>
-            <BudgetSelector />
+            <BudgetSelector 
+              currentBudgetId={accountsData?.currentBudgetId}
+              onBudgetChange={() => {
+                // Refresh accounts and mappings after budget change
+                refetchAccounts();
+                refetchMappings();
+              }}
+            />
           </CardContent>
         </Card>
 

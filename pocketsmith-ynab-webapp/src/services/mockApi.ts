@@ -216,7 +216,8 @@ export const mockApi = {
     await delay(800); // Simulate network delay
     return {
       pocketsmithAccounts: mockPocketSmithAccounts,
-      ynabAccounts: mockYnabAccounts
+      ynabAccounts: mockYnabAccounts,
+      currentBudgetId: mockYnabBudgets[0]?.id // Use first budget as current
     };
   },
 
