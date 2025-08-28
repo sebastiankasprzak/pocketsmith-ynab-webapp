@@ -3,7 +3,8 @@ import { accountsApi } from '../services/accountsApi';
 import type {
   AccountsResponse,
   MappingsResponse,
-  AccountMappingCreate
+  AccountMappingCreate,
+  BudgetsResponse
 } from '../types/accounts';
 
 // Query keys
@@ -73,6 +74,31 @@ export const useUpdateMappingConfig = () => {
       accountsApi.updateMappingConfig(config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.mappings });
+    },
+  });
+};
+
+// Hook for fetching YNAB budgets
+export const useYNABBudgets = () => {
+  return useQuery({
+    queryKey: ['ynab-budgets'],
+    queryFn: accountsApi.fetchYNABBudgets,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+  });
+};
+
+// Hook for updating YNAB budget ID
+export const useUpdateYNABBudgetId = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (budgetId: string) => accountsApi.updateYNABBudgetId(budgetId),
+    onSuccess: () => {
+      // Invalidate accounts and mappings since budget change affects them
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.accounts });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.mappings });
+      queryClient.invalidateQueries({ queryKey: ['ynab-budgets'] });
     },
   });
 };

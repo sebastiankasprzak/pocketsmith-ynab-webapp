@@ -51,6 +51,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
       
+      // Add a small delay to ensure Amplify is fully initialized
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const isAuth = await authService.isAuthenticated();
       if (isAuth) {
         const currentUser = await authService.getCurrentUser();
@@ -59,6 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
       }
     } catch (err) {
+      console.warn('Auth state check failed:', err);
       setUser(null);
     } finally {
       setLoading(false);

@@ -57,11 +57,13 @@ export const theme = createTheme({
         root: {
           paddingTop: '24px',
           paddingBottom: '24px',
+          width: '100%',
+          maxWidth: '100%',
           '@media (max-width:600px)': {
             paddingTop: '16px',
             paddingBottom: '16px',
-            paddingLeft: '16px',
-            paddingRight: '16px',
+            paddingLeft: '12px',
+            paddingRight: '12px',
           },
         },
       },

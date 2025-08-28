@@ -5,7 +5,9 @@ import type {
   MappingsResponse,
   AccountMappingCreate,
   BalanceComparisonResponse,
-  BalanceComparison
+  BalanceComparison,
+  BudgetsResponse,
+  YNABBudget
 } from '../types/accounts';
 
 // Mock data for development
@@ -121,6 +123,69 @@ const mockYnabAccounts: YNABAccount[] = [
     transfer_payee_id: "transfer-4",
     direct_import_linked: false,
     direct_import_in_error: false
+  }
+];
+
+const mockYnabBudgets: YNABBudget[] = [
+  {
+    id: "budget-1",
+    name: "Personal Budget 2024",
+    last_modified_on: "2024-01-15T10:30:00Z",
+    first_month: "2024-01-01",
+    last_month: "2024-12-01",
+    date_format: {
+      format: "MM/DD/YYYY"
+    },
+    currency_format: {
+      iso_code: "USD",
+      example_format: "$123,456.78",
+      decimal_digits: 2,
+      decimal_separator: ".",
+      symbol_first: true,
+      group_separator: ",",
+      currency_symbol: "$",
+      display_symbol: true
+    }
+  },
+  {
+    id: "budget-2",
+    name: "Family Budget",
+    last_modified_on: "2024-01-10T08:15:00Z",
+    first_month: "2023-01-01",
+    last_month: "2024-12-01",
+    date_format: {
+      format: "MM/DD/YYYY"
+    },
+    currency_format: {
+      iso_code: "USD",
+      example_format: "$123,456.78",
+      decimal_digits: 2,
+      decimal_separator: ".",
+      symbol_first: true,
+      group_separator: ",",
+      currency_symbol: "$",
+      display_symbol: true
+    }
+  },
+  {
+    id: "budget-3",
+    name: "Business Expenses",
+    last_modified_on: "2024-01-12T14:20:00Z",
+    first_month: "2024-01-01",
+    last_month: "2024-12-01",
+    date_format: {
+      format: "MM/DD/YYYY"
+    },
+    currency_format: {
+      iso_code: "USD",
+      example_format: "$123,456.78",
+      decimal_digits: 2,
+      decimal_separator: ".",
+      symbol_first: true,
+      group_separator: ",",
+      currency_symbol: "$",
+      display_symbol: true
+    }
   }
 ];
 
@@ -356,5 +421,28 @@ export const mockApi = {
     });
     
     return refreshedComparisons;
+  },
+
+  async fetchYNABBudgets(): Promise<BudgetsResponse> {
+    await delay(800); // Simulate API delay
+    
+    return {
+      budgets: mockYnabBudgets,
+      count: mockYnabBudgets.length,
+      timestamp: new Date().toISOString()
+    };
+  },
+
+  async updateYNABBudgetId(budgetId: string): Promise<void> {
+    await delay(1000); // Simulate API delay
+    
+    // Validate that the budget exists
+    const budget = mockYnabBudgets.find(b => b.id === budgetId);
+    if (!budget) {
+      throw new Error(`Budget with ID ${budgetId} not found`);
+    }
+    
+    console.log(`Mock: Updated YNAB budget ID to ${budgetId} (${budget.name})`);
+    // In a real implementation, this would update the parameter store
   }
 };

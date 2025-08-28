@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Container,
   Typography,
   Box,
   Alert,
@@ -123,122 +122,127 @@ export const SyncStatus: React.FC = () => {
     };
   }, [autoRefresh, fetchSyncData]);
 
-
-
-
-
-
-
   if (loading) {
     return (
-      <Container maxWidth="lg">
-        <Box py={4} display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <CircularProgress />
-        </Box>
-      </Container>
+      <Box py={4} display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg">
-      <Box py={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Sync Status Dashboard
-            </Typography>
-            <Box display="flex" alignItems="center" gap={2}>
-              <Typography variant="body2" color="text.secondary">
-                {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
-              </Typography>
-            </Box>
-          </Box>
-          <Box display="flex" gap={2} alignItems="center">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={autoRefresh}
-                  onChange={handleAutoRefreshToggle}
-                  color="primary"
-                />
-              }
-              label="Auto-refresh"
-            />
-            <Button
-              variant="outlined"
-              startIcon={<Settings />}
-              onClick={handleOpenManualSyncDialog}
-              disabled={refreshing}
-            >
-              Manual Sync
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={refreshing ? <CircularProgress size={16} /> : <Refresh />}
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
-          </Box>
+    <Box sx={{ 
+      maxWidth: '100%',
+      overflow: 'hidden',
+      width: '100%',
+      boxSizing: 'border-box'
+    }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Sync Status Dashboard
+        </Typography>
+        <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
+          </Typography>
         </Box>
+        <Box 
+          display="flex" 
+          gap={2} 
+          alignItems="center"
+          sx={{
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' }
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoRefresh}
+                onChange={handleAutoRefreshToggle}
+                color="primary"
+              />
+            }
+            label="Auto-refresh"
+          />
+          <Button
+            variant="outlined"
+            startIcon={<Settings />}
+            onClick={handleOpenManualSyncDialog}
+            disabled={refreshing}
+            fullWidth={false}
+            sx={{ minWidth: { xs: 'auto', sm: 140 } }}
+          >
+            Manual Sync
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={refreshing ? <CircularProgress size={16} /> : <Refresh />}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            fullWidth={false}
+            sx={{ minWidth: { xs: 'auto', sm: 100 } }}
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </Box>
+      </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        {/* Modern DynamoDB-based Sync State Overview */}
-        {syncStateOverview && (
-          <ModernSyncStatusCard
-            syncStateOverview={syncStateOverview}
-            onRefresh={handleRefresh}
+      {/* Modern DynamoDB-based Sync State Overview */}
+      {syncStateOverview && (
+        <ModernSyncStatusCard
+          syncStateOverview={syncStateOverview}
+          onRefresh={handleRefresh}
+          loading={refreshing}
+        />
+      )}
+
+      {/* Recent Activity from DynamoDB */}
+      {recentActivity && (
+        <Box mb={3}>
+          <RecentActivityCard
+            recentActivity={recentActivity.recent_activity}
+            hours={activityHours}
+            onHoursChange={handleActivityHoursChange}
             loading={refreshing}
           />
-        )}
+        </Box>
+      )}
 
-        {/* Recent Activity from DynamoDB */}
-        {recentActivity && (
-          <Box mb={3}>
-            <RecentActivityCard
-              recentActivity={recentActivity.recent_activity}
-              hours={activityHours}
-              onHoursChange={handleActivityHoursChange}
-              loading={refreshing}
-            />
-          </Box>
-        )}
-
-        {/* Detailed Account Sync State Table */}
-        {syncStateOverview && (
-          <Box mb={3}>
-            <AccountSyncStateTable
-              accounts={syncStateOverview.accounts}
-              loading={refreshing}
-            />
-          </Box>
-        )}
-
-        {/* Manual Sync Dialog */}
-        <ManualSyncDialog
-          open={showManualSyncDialog}
-          onClose={handleCloseManualSyncDialog}
-          onSyncTriggered={handleSyncTriggered}
-          currentQueueDepth={0}
-          syncInProgress={false}
-        />
-
-        {/* Sync Progress Tracker */}
-        {currentSyncResponse && (
-          <SyncProgressTracker
-            open={showProgressTracker}
-            onClose={handleCloseProgressTracker}
-            syncResponse={currentSyncResponse}
-            onSyncComplete={handleSyncComplete}
+      {/* Detailed Account Sync State Table */}
+      {syncStateOverview && (
+        <Box mb={3}>
+          <AccountSyncStateTable
+            accounts={syncStateOverview.accounts}
+            loading={refreshing}
           />
-        )}
-      </Box>
-    </Container>
+        </Box>
+      )}
+
+      {/* Manual Sync Dialog */}
+      <ManualSyncDialog
+        open={showManualSyncDialog}
+        onClose={handleCloseManualSyncDialog}
+        onSyncTriggered={handleSyncTriggered}
+        currentQueueDepth={0}
+        syncInProgress={false}
+      />
+
+      {/* Sync Progress Tracker */}
+      {currentSyncResponse && (
+        <SyncProgressTracker
+          open={showProgressTracker}
+          onClose={handleCloseProgressTracker}
+          syncResponse={currentSyncResponse}
+          onSyncComplete={handleSyncComplete}
+        />
+      )}
+    </Box>
   );
 };

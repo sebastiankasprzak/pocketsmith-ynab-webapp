@@ -13,6 +13,9 @@ import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/ToastNotifications';
 import { SkipLinks } from './components/SkipLinks';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
+import { AppInitializer } from './components/AppInitializer';
 import { errorLoggingService } from './services/errorLoggingService';
 import { useAuthErrorHandler } from './hooks/useAuthErrorHandler';
 
@@ -75,11 +78,14 @@ function App() {
                 errorLoggingService.logError(error, errorInfo, { level: 'page', component: 'AuthProvider' });
               }}
             >
-              <AuthProvider>
-                <AuthErrorHandlerWrapper>
-                  <AuthErrorHandler>
-                    <Router>
+              <AppInitializer>
+                <AuthProvider>
+                  <AuthErrorHandlerWrapper>
+                    <AuthErrorHandler>
+                      <Router>
                       <SkipLinks />
+                      <PWAUpdatePrompt />
+                      <PWAInstallPrompt />
                       <Box sx={{ flexGrow: 1, minHeight: '100vh' }}>
                         <ProtectedRoute>
                       <Navigation>
@@ -106,6 +112,8 @@ function App() {
                                   <Route path="/account-mappings" element={<AccountMappings />} />
                                   <Route path="/sync-status" element={<SyncStatus />} />
                                   <Route path="/balance-comparison" element={<BalanceComparison />} />
+                                  {/* Catch-all route to redirect to home for unknown paths */}
+                                  <Route path="*" element={<Dashboard />} />
                                 </Routes>
                               </Suspense>
                             </Box>
@@ -118,6 +126,7 @@ function App() {
                   </AuthErrorHandler>
                 </AuthErrorHandlerWrapper>
               </AuthProvider>
+              </AppInitializer>
             </ErrorBoundary>
           </ToastProvider>
         </ThemeProvider>

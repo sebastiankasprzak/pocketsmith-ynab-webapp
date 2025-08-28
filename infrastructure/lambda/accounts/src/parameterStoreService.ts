@@ -1,4 +1,4 @@
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { SSMClient, GetParameterCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
 
 export class ParameterStoreService {
   private ssm: SSMClient;
@@ -37,5 +37,23 @@ export class ParameterStoreService {
 
   async getYNABBudgetId(): Promise<string> {
     return this.getParameter('/pocketsmith-ynab-sync/ynab-budget-id');
+  }
+
+  async updateYNABBudgetId(budgetId: string): Promise<void> {
+    try {
+      const command = new PutParameterCommand({
+        Name: '/pocketsmith-ynab-sync/ynab-budget-id',
+        Value: budgetId,
+        Type: 'String',
+        Overwrite: true,
+        Description: 'YNAB Budget ID for PocketSmith-YNAB sync'
+      });
+
+      await this.ssm.send(command);
+      console.log(`Successfully updated YNAB budget ID to: ${budgetId}`);
+    } catch (error) {
+      console.error('Error updating YNAB budget ID:', error);
+      throw new Error(`Failed to update YNAB budget ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }

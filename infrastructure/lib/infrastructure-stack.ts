@@ -248,6 +248,10 @@ export class InfrastructureStack extends cdk.Stack {
     const pocketsmithAccountsResource = accountsResource.addResource('pocketsmith');
     const ynabAccountsResource = accountsResource.addResource('ynab');
 
+    const budgetsResource = api.root.addResource('budgets');
+    const ynabBudgetsResource = budgetsResource.addResource('ynab');
+    const ynabBudgetsUpdateResource = ynabBudgetsResource.addResource('update');
+
     const mappingsResource = api.root.addResource('mappings');
     const mappingIdResource = mappingsResource.addResource('{id}');
     const mappingsValidateResource = mappingsResource.addResource('validate');
@@ -342,6 +346,16 @@ export class InfrastructureStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.COGNITO
     });
     ynabAccountsResource.addMethod('GET', accountsIntegration, {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+
+    // Budget endpoints - require authentication
+    ynabBudgetsResource.addMethod('GET', accountsIntegration, {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    ynabBudgetsUpdateResource.addMethod('POST', accountsIntegration, {
       authorizer: cognitoAuthorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO
     });

@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, type AxiosResponse } from 'axios';
-import { YNABAccount, YNABAccountsResponse } from './types';
+import { YNABAccount, YNABAccountsResponse, YNABBudget, YNABBudgetsResponse } from './types';
 
 export class YNABClient {
   private client: AxiosInstance;
@@ -120,6 +120,36 @@ export class YNABClient {
       
       // For other errors, we can't determine if the key is valid
       throw new Error(`Unable to validate YNAB API key: ${error.message}`);
+    }
+  }
+
+  async getBudgets(): Promise<YNABBudget[]> {
+    try {
+      console.log('Fetching YNAB budgets...');
+      
+      const response = await this.retryRequest(() => 
+        this.client.get<YNABBudgetsResponse>('/budgets')
+      );
+
+      const budgets = response.data.data.budgets;
+      console.log(`Successfully fetched ${budgets.length} YNAB budgets`);
+      return budgets;
+    } catch (error: any) {
+      console.error('Error fetching YNAB budgets:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Invalid YNAB API key. Please check your credentials.');
+      } else if (error.response?.status === 403) {
+        throw new Error('YNAB API access forbidden. Please check your API key permissions.');
+      } else if (error.response?.status === 429) {
+        throw new Error('YNAB API rate limit exceeded. Please try again later.');
+      } else if (error.code === 'ETIMEDOUT') {
+        throw new Error('YNAB API request timed out. Please try again.');
+      } else if (error.code === 'ENOTFOUND') {
+        throw new Error('Unable to connect to YNAB API. Please check your internet connection.');
+      }
+      
+      throw new Error(`Failed to fetch YNAB budgets: ${error.message}`);
     }
   }
 

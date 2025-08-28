@@ -22,11 +22,19 @@ const configureAuth = () => {
         Cognito: {
           userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
           userPoolClientId: import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID,
+          // Add additional configuration for better session management
+          cookieStorage: {
+            domain: window.location.hostname,
+            path: '/',
+            expires: 365,
+            sameSite: 'strict',
+            secure: window.location.protocol === 'https:'
+          }
         }
       }
     });
   } catch (error) {
-    // Silently fail auth configuration
+    console.warn('Failed to configure Amplify Auth:', error);
   }
 };
 
@@ -198,9 +206,19 @@ class AuthService {
     }
 
     try {
+      // First try to get the session to check if tokens exist
+      const session = await fetchAuthSession();
+      
+      // Check if we have valid tokens
+      if (!session.tokens || !session.tokens.accessToken) {
+        return false;
+      }
+      
+      // Verify we can get the current user
       await this.getCurrentUser();
       return true;
-    } catch {
+    } catch (error) {
+      console.warn('Authentication check failed:', error);
       return false;
     }
   }

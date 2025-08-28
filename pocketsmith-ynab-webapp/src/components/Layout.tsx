@@ -10,12 +10,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: '100vh', backgroundColor: 'background.default' }}>
+    <Box sx={{ 
+      flexGrow: 1, 
+      minHeight: '100vh', 
+      backgroundColor: 'background.default',
+      width: '100%',
+      overflow: 'hidden'
+    }}>
       <Container 
         maxWidth="lg" 
         sx={{
-          px: isMobile ? 2 : 3,
+          px: isMobile ? 1.5 : 3,
           py: isMobile ? 2 : 3,
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
         }}
       >
         {children}

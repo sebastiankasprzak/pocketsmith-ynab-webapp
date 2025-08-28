@@ -108,6 +108,95 @@ async function handleYNABAccounts(event: APIGatewayProxyEvent): Promise<APIGatew
   }
 }
 
+async function handleYNABBudgets(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Validate authentication
+    const user = await requireAuth(event);
+    console.log(`Handling YNAB budgets request for user: ${user.userId}`);
+    
+    const apiKey = await parameterStore.getYNABApiKey();
+    
+    // Create client without budget ID since we're listing all budgets
+    const client = new YNABClient(apiKey, '');
+    
+    const budgets = await client.getBudgets();
+    
+    return createResponse(200, {
+      budgets,
+      count: budgets.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Error handling YNAB budgets request:', error);
+    
+    if (error.message.includes('Parameter') && error.message.includes('not found')) {
+      return createErrorResponse(404, 'PARAMETER_NOT_FOUND', 'YNAB API key not configured in Parameter Store');
+    } else if (error.message.includes('Invalid YNAB API key')) {
+      return createErrorResponse(401, 'INVALID_API_KEY', error.message);
+    } else if (error.message.includes('rate limit')) {
+      return createErrorResponse(429, 'RATE_LIMIT_EXCEEDED', error.message);
+    } else if (error.message.includes('timed out')) {
+      return createErrorResponse(408, 'REQUEST_TIMEOUT', error.message);
+    }
+    
+    return createErrorResponse(500, 'INTERNAL_ERROR', 'Failed to fetch YNAB budgets', error.message);
+  }
+}
+
+async function handleUpdateYNABBudgetId(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Validate authentication
+    const user = await requireAuth(event);
+    console.log(`Handling YNAB budget ID update request for user: ${user.userId}`);
+    
+    if (!event.body) {
+      return createErrorResponse(400, 'MISSING_BODY', 'Request body is required');
+    }
+    
+    const { budgetId } = JSON.parse(event.body);
+    
+    if (!budgetId || typeof budgetId !== 'string') {
+      return createErrorResponse(400, 'INVALID_BUDGET_ID', 'Budget ID is required and must be a string');
+    }
+    
+    // Validate that the budget ID exists and is accessible
+    const apiKey = await parameterStore.getYNABApiKey();
+    const client = new YNABClient(apiKey, budgetId);
+    
+    // Test access to the budget
+    const isValid = await client.validateBudgetAccess();
+    if (!isValid) {
+      return createErrorResponse(404, 'BUDGET_NOT_FOUND', 'The specified budget ID is not accessible or does not exist');
+    }
+    
+    // Update the budget ID in parameter store
+    await parameterStore.updateYNABBudgetId(budgetId);
+    
+    return createResponse(200, {
+      success: true,
+      budgetId,
+      message: 'YNAB budget ID updated successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Error handling YNAB budget ID update request:', error);
+    
+    if (error.message.includes('Parameter') && error.message.includes('not found')) {
+      return createErrorResponse(404, 'PARAMETER_NOT_FOUND', 'YNAB API key not configured in Parameter Store');
+    } else if (error.message.includes('Invalid YNAB API key')) {
+      return createErrorResponse(401, 'INVALID_API_KEY', error.message);
+    } else if (error.message.includes('budget not found')) {
+      return createErrorResponse(404, 'BUDGET_NOT_FOUND', error.message);
+    } else if (error.message.includes('rate limit')) {
+      return createErrorResponse(429, 'RATE_LIMIT_EXCEEDED', error.message);
+    } else if (error.message.includes('timed out')) {
+      return createErrorResponse(408, 'REQUEST_TIMEOUT', error.message);
+    }
+    
+    return createErrorResponse(500, 'INTERNAL_ERROR', 'Failed to update YNAB budget ID', error.message);
+  }
+}
+
 async function handleCredentialsValidation(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     // Validate authentication
@@ -188,6 +277,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return await handlePocketSmithAccounts(event);
     } else if (path === '/accounts/ynab' && method === 'GET') {
       return await handleYNABAccounts(event);
+    } else if (path === '/budgets/ynab' && method === 'GET') {
+      return await handleYNABBudgets(event);
+    } else if (path === '/budgets/ynab/update' && method === 'POST') {
+      return await handleUpdateYNABBudgetId(event);
     } else if (path === '/credentials/validate' && method === 'GET') {
       return await handleCredentialsValidation(event);
     } else {

@@ -83,7 +83,12 @@ export const BalanceComparison: React.FC = () => {
     : 0;
 
   return (
-    <Box>
+    <Box sx={{ 
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      boxSizing: 'border-box'
+    }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
@@ -94,7 +99,12 @@ export const BalanceComparison: React.FC = () => {
         </Typography>
 
         {/* Status and Actions */}
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={2} 
+          alignItems={{ xs: 'stretch', sm: 'center' }} 
+          sx={{ flexWrap: 'wrap' }}
+        >
           {balanceData && (
             <>
               <Chip

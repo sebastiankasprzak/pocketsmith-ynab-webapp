@@ -7,7 +7,8 @@ import type {
   AccountMappingCreate,
   AccountsResponse,
   MappingsResponse,
-  BalanceComparisonResponse
+  BalanceComparisonResponse,
+  BudgetsResponse
 } from '../types/accounts';
 
 // Use mock API if explicitly set to true, OR if in development mode AND not explicitly set to false
@@ -275,6 +276,25 @@ const realApi = {
       return response.data;
     } catch (error: any) {
       this.handleApiError(error, 'Failed to refresh balances');
+    }
+  },
+
+  // Fetch YNAB budgets
+  async fetchYNABBudgets(): Promise<BudgetsResponse> {
+    try {
+      const response = await apiClient.get<BudgetsResponse>('/budgets/ynab');
+      return response.data;
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to fetch YNAB budgets');
+    }
+  },
+
+  // Update YNAB budget ID
+  async updateYNABBudgetId(budgetId: string): Promise<void> {
+    try {
+      await apiClient.post('/budgets/ynab/update', { budgetId });
+    } catch (error: any) {
+      this.handleApiError(error, 'Failed to update YNAB budget ID');
     }
   },
 

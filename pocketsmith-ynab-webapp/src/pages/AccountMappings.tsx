@@ -37,6 +37,7 @@ import {
 import { useAccounts, useMappings, useSaveMappings, useDeleteMapping, useValidateMappings, useUpdateMappingConfig } from '../hooks/useAccountMappings';
 import { MappingConfigurationCard } from '../components/MappingConfigurationCard';
 import { ImprovedMappingCard } from '../components/ImprovedMappingCard';
+import { BudgetSelector } from '../components/BudgetSelector';
 import { validateMappings } from '../utils/mappingValidation';
 import type { AccountMappingCreate, PocketSmithAccount, YNABAccount } from '../types/accounts';
 
@@ -461,8 +462,10 @@ export const AccountMappings: React.FC = () => {
     <Box sx={{ 
       position: 'relative', 
       pb: isMobile ? 10 : 0,
+      width: '100%',
       maxWidth: '100%',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
@@ -560,12 +563,20 @@ export const AccountMappings: React.FC = () => {
         </Box>
 
         {/* Action Buttons */}
-        <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={2} 
+          sx={{ 
+            justifyContent: 'flex-end',
+            alignItems: { xs: 'stretch', sm: 'center' }
+          }}
+        >
           <Button
             variant="outlined"
             onClick={handleRefresh}
             startIcon={<RefreshIcon />}
             disabled={isLoading}
+            fullWidth={isMobile}
           >
             Refresh
           </Button>
@@ -583,8 +594,9 @@ export const AccountMappings: React.FC = () => {
               variant="contained"
               onClick={handleSaveMappings}
               disabled={saveMappingsMutation.isPending}
-              sx={{ minWidth: 140 }}
+              sx={{ minWidth: { sm: 140 } }}
               color="success"
+              fullWidth={isMobile}
             >
               Save Changes ({pendingMappings.length})
             </Button>
@@ -593,6 +605,13 @@ export const AccountMappings: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Budget Selection */}
+        <Card>
+          <CardContent>
+            <BudgetSelector />
+          </CardContent>
+        </Card>
+
         {/* Configuration Settings */}
         {mappingsData?.config && accountsData?.ynabAccounts && (
           <MappingConfigurationCard
