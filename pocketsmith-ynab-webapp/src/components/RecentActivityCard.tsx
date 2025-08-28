@@ -136,7 +136,7 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
                       primary={
                         <Box display="flex" alignItems="center" gap={1}>
                           <Typography variant="subtitle2">
-                            Account {account.account_id}
+                            {account.account_name || `Account ${account.account_id}`}
                           </Typography>
                           <Badge badgeContent={account.count} color="primary">
                             <TrendingUp fontSize="small" />

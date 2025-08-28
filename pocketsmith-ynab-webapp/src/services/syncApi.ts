@@ -132,6 +132,7 @@ export interface SyncTriggerResponse {
 // DynamoDB Sync State interfaces
 export interface SyncStateAccount {
   account_id: string;
+  account_name?: string;
   last_sync: string | null;
   processed_transactions_count: number;
   last_updated: string;
@@ -147,6 +148,7 @@ export interface SyncStateOverview {
 
 export interface RecentTransactionActivity {
   account_id: string;
+  account_name?: string;
   recent_transactions: Array<{
     transaction_id: string;
     processed_at: string;

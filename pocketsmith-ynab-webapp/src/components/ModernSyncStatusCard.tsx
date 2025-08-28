@@ -152,21 +152,24 @@ export const ModernSyncStatusCard: React.FC<ModernSyncStatusCardProps> = ({
             Account Summary
           </Typography>
           <Box display="flex" flexWrap="wrap" gap={1}>
-            {syncStateOverview.accounts.slice(0, 8).map((account) => (
-              <Tooltip
-                key={account.account_id}
-                title={`Account ${account.account_id}: ${account.processed_transactions_count} transactions, last sync: ${
-                  account.last_sync ? formatDistanceToNow(parseISO(account.last_sync)) + ' ago' : 'Never'
-                }`}
-              >
-                <Chip
-                  size="small"
-                  label={`${account.account_id} (${account.processed_transactions_count})`}
-                  color={account.last_sync ? 'primary' : 'default'}
-                  variant={account.last_sync ? 'filled' : 'outlined'}
-                />
-              </Tooltip>
-            ))}
+            {syncStateOverview.accounts.slice(0, 8).map((account) => {
+              const displayName = account.account_name || `Account ${account.account_id}`;
+              return (
+                <Tooltip
+                  key={account.account_id}
+                  title={`${displayName}: ${account.processed_transactions_count} transactions, last sync: ${
+                    account.last_sync ? formatDistanceToNow(parseISO(account.last_sync)) + ' ago' : 'Never'
+                  }`}
+                >
+                  <Chip
+                    size="small"
+                    label={`${displayName} (${account.processed_transactions_count})`}
+                    color={account.last_sync ? 'primary' : 'default'}
+                    variant={account.last_sync ? 'filled' : 'outlined'}
+                  />
+                </Tooltip>
+              );
+            })}
             {syncStateOverview.accounts.length > 8 && (
               <Chip
                 size="small"

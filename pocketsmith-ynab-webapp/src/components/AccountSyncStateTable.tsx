@@ -83,17 +83,21 @@ export const AccountSyncStateTable: React.FC<AccountSyncStateTableProps> = ({
   };
 
   const filteredAndSortedAccounts = accounts
-    .filter(account => 
-      account.account_id.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(account => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        account.account_id.toLowerCase().includes(searchLower) ||
+        (account.account_name && account.account_name.toLowerCase().includes(searchLower))
+      );
+    })
     .sort((a, b) => {
       let aValue: any;
       let bValue: any;
 
       switch (sortField) {
         case 'account_id':
-          aValue = a.account_id;
-          bValue = b.account_id;
+          aValue = a.account_name || a.account_id;
+          bValue = b.account_name || b.account_id;
           break;
         case 'last_sync':
           aValue = a.last_sync ? parseISO(a.last_sync).getTime() : 0;
@@ -202,9 +206,16 @@ export const AccountSyncStateTable: React.FC<AccountSyncStateTableProps> = ({
                         </IconButton>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {account.account_id}
-                        </Typography>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {account.account_name || `Account ${account.account_id}`}
+                          </Typography>
+                          {account.account_name && (
+                            <Typography variant="caption" color="text.secondary">
+                              ID: {account.account_id}
+                            </Typography>
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Tooltip title={syncStatus.text}>
