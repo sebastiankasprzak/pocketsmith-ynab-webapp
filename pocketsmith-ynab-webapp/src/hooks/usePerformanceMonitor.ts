@@ -93,7 +93,7 @@ export const usePerformanceMonitor = (
             });
             clsObserver.observe({ entryTypes: ['layout-shift'] });
           } catch (error) {
-            console.warn('CLS observer not supported:', error);
+            // CLS observer not supported
           }
         }
       }
@@ -120,7 +120,6 @@ export const usePerformanceMonitor = (
   const endTiming = useCallback((operationName: string, category?: string) => {
     const entry = performanceEntries.current.get(operationName);
     if (!entry) {
-      console.warn(`No timing entry found for operation: ${operationName}`);
       return;
     }
 

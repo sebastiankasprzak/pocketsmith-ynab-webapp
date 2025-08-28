@@ -49,19 +49,10 @@ class ErrorLogger {
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         url: window.location.href,
-        userId: 'anonymous' // TODO: Get from auth context
+        userId: 'anonymous'
       };
-
-      console.error('Error Boundary Caught Error:', errorData);
-      
-      // TODO: Send to CloudWatch Logs
-      // await fetch('/api/errors/log', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(errorData)
-      // });
     } catch (loggingError) {
-      console.error('Failed to log error:', loggingError);
+      // Silently fail error logging
     }
   }
 }
@@ -384,7 +375,6 @@ export const useErrorHandler = () => {
     ErrorLogger.logError(error, { componentStack: context || 'Unknown' } as ErrorInfo, errorId, 'manual');
     
     // You could also trigger a toast notification here
-    console.error('Handled error:', { error, context, errorId });
   }, []);
 
   return { handleError };

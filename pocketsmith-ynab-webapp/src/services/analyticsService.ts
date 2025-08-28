@@ -43,7 +43,6 @@ class AnalyticsService {
    */
   async trackUserAction(action: UserAction): Promise<void> {
     if (!this.isEnabled) {
-      console.log('Analytics (dev):', action);
       return;
     }
 
@@ -63,7 +62,7 @@ class AnalyticsService {
 
       await this.sendMetric(event);
     } catch (error) {
-      console.error('Failed to track user action:', error);
+      // Silently fail analytics tracking
     }
   }
 
@@ -72,7 +71,6 @@ class AnalyticsService {
    */
   async trackPerformance(metric: PerformanceMetric): Promise<void> {
     if (!this.isEnabled) {
-      console.log('Performance (dev):', metric);
       return;
     }
 
@@ -90,7 +88,7 @@ class AnalyticsService {
 
       await this.sendMetric(event);
     } catch (error) {
-      console.error('Failed to track performance metric:', error);
+      // Silently fail analytics tracking
     }
   }
 
@@ -99,7 +97,6 @@ class AnalyticsService {
    */
   async trackError(error: Error, context?: Record<string, string>): Promise<void> {
     if (!this.isEnabled) {
-      console.log('Error (dev):', error, context);
       return;
     }
 
@@ -117,7 +114,7 @@ class AnalyticsService {
 
       await this.sendMetric(event);
     } catch (trackingError) {
-      console.error('Failed to track error:', trackingError);
+      // Silently fail analytics tracking
     }
   }
 
@@ -145,7 +142,7 @@ class AnalyticsService {
 
       await this.sendMetric(analyticsEvent);
     } catch (error) {
-      console.error('Failed to track authentication event:', error);
+      // Silently fail analytics tracking
     }
   }
 
@@ -202,7 +199,7 @@ class AnalyticsService {
         });
       }
     } catch (error) {
-      console.error('Failed to track sync operation:', error);
+      // Silently fail analytics tracking
     }
   }
 
@@ -224,7 +221,7 @@ class AnalyticsService {
 
       await this.sendMetric(event);
     } catch (error) {
-      console.error('Failed to track page view:', error);
+      // Silently fail analytics tracking
     }
   }
 
@@ -303,7 +300,7 @@ class AnalyticsService {
         await this.cloudWatchClient.send(command);
       }
     } catch (error) {
-      console.error('Failed to send batch metrics:', error);
+      // Silently fail analytics tracking
     }
   }
 

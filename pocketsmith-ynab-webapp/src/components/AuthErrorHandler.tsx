@@ -15,7 +15,7 @@ export const AuthErrorHandler: React.FC<AuthErrorHandlerProps> = ({ children }) 
       setShowSessionExpired(true);
       // Auto sign out after showing the message
       setTimeout(() => {
-        signOut().catch(console.error);
+        signOut().catch(() => {});
       }, 3000);
     };
 

@@ -189,7 +189,7 @@ class CacheService {
         const data = await fetcher();
         this.set(key, data, ttl);
       } catch (error) {
-        console.warn(`Failed to preload cache entry ${key}:`, error);
+        // Silently fail cache preload
       }
     });
 
@@ -211,7 +211,6 @@ class CacheService {
     }
     
     if (cleaned > 0) {
-      console.debug(`Cache cleanup: removed ${cleaned} expired entries`);
       this.saveToStorage();
     }
   }
@@ -232,7 +231,6 @@ class CacheService {
     
     if (oldestKey) {
       this.cache.delete(oldestKey);
-      console.debug(`Cache eviction: removed LRU entry ${oldestKey}`);
     }
   }
 
@@ -270,7 +268,7 @@ class CacheService {
       
       localStorage.setItem(this.storageKey, JSON.stringify(serializable));
     } catch (error) {
-      console.warn('Failed to save cache to localStorage:', error);
+      // Silently fail localStorage save
     }
   }
 
@@ -291,10 +289,8 @@ class CacheService {
           this.cache.set(key, entry);
         }
       }
-      
-      console.debug(`Loaded ${this.cache.size} cache entries from localStorage`);
     } catch (error) {
-      console.warn('Failed to load cache from localStorage:', error);
+      // Silently fail localStorage load
     }
   }
 }

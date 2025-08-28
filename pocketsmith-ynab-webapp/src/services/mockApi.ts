@@ -228,7 +228,7 @@ export const mockApi = {
       strict_mode: config.strict_mode,
     };
     
-    console.log('Mock: Updated mapping configuration:', mockConfig);
+
   },
 
 

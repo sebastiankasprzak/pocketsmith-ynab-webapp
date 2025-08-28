@@ -14,22 +14,7 @@ import type {
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true' || 
   (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_API !== 'false');
 
-// Debug logging to help troubleshoot API selection
-console.log('API Configuration:', {
-  VITE_USE_MOCK_API: import.meta.env.VITE_USE_MOCK_API,
-  VITE_USE_MOCK_API_type: typeof import.meta.env.VITE_USE_MOCK_API,
-  VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
-  DEV: import.meta.env.DEV,
-  USE_MOCK_API,
-  decision_logic: {
-    explicit_true: import.meta.env.VITE_USE_MOCK_API === 'true',
-    is_dev: import.meta.env.DEV,
-    not_explicit_false: import.meta.env.VITE_USE_MOCK_API !== 'false',
-    dev_and_not_false: import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_API !== 'false'
-  }
-});
 
-console.log(`🔧 Using ${USE_MOCK_API ? 'MOCK' : 'REAL'} API for ${import.meta.env.VITE_ENVIRONMENT || 'unknown'} environment`);
 
 // Real API implementation
 const realApi = {
@@ -55,7 +40,6 @@ const realApi = {
         ynabAccounts: ynabResponse.data.accounts
       };
     } catch (error: any) {
-      console.error('Failed to fetch accounts:', error);
       this.handleApiError(error, 'Failed to fetch accounts');
     }
   },
@@ -93,22 +77,12 @@ const realApi = {
     try {
       accountsData = await realApi.fetchAccounts();
     } catch (error) {
-      console.error('Failed to fetch account data for mapping names:', error);
       // Re-throw the error instead of falling back to IDs
       // This will cause the UI to show an error state instead of confusing ID-based names
       throw new Error('Unable to load account mappings: Failed to fetch account details');
     }
 
-    // Debug logging (only in development)
-    if (import.meta.env.DEV) {
-      console.log('Accounts data:', {
-        pocketsmithCount: accountsData.pocketsmithAccounts.length,
-        ynabCount: accountsData.ynabAccounts.length,
-        samplePSAccount: accountsData.pocketsmithAccounts[0],
-        sampleYNABAccount: accountsData.ynabAccounts[0]
-      });
-      console.log('Mappings config:', config.mappings);
-    }
+
 
     // Create lookup maps for account names - handle both string and number IDs
     const psAccountMap = new Map();
@@ -125,10 +99,7 @@ const realApi = {
         psAccountMap.set(numberId, accountName);
       }
       
-      // Debug: log what we're storing (only in development)
-      if (import.meta.env.DEV) {
-        console.log(`Storing PocketSmith account: ${accountName} with IDs [${stringId}, ${numberId}] (title: ${acc.title}, name: ${acc.name})`);
-      }
+
     });
 
     const ynabAccountMap = new Map(
@@ -150,24 +121,7 @@ const realApi = {
       
       const ynabName = ynabAccountMap.get(ynabId);
       
-      // Enhanced debugging for missing accounts
-      if (!psName) {
-        console.warn(`PocketSmith account with ID ${psId} (type: ${typeof psId}) not found in current accounts list`);
-        console.warn('Available PocketSmith IDs:', Array.from(psAccountMap.keys()).slice(0, 10)); // Show first 10 to avoid console spam
-        
-        // Try to find similar IDs (in case of format differences)
-        const availableIds = Array.from(psAccountMap.keys());
-        const similarIds = availableIds.filter(id => 
-          id.toString().includes(psId.toString()) || psId.toString().includes(id.toString())
-        );
-        if (similarIds.length > 0) {
-          console.warn(`Possible similar PocketSmith IDs found:`, similarIds);
-        }
-      }
-      if (!ynabName) {
-        console.warn(`YNAB account with ID ${ynabId} (type: ${typeof ynabId}) not found in current accounts list`);
-        console.warn('Available YNAB IDs:', Array.from(ynabAccountMap.keys()).slice(0, 10));
-      }
+
 
       // Determine if this is likely a deleted account vs a data issue
       const isLikelyDeleted = !psName && accountsData.pocketsmithAccounts.length > 0;
@@ -189,7 +143,6 @@ const realApi = {
       config
     };
     } catch (error: any) {
-      console.error('Failed to fetch mappings:', error);
       this.handleApiError(error, 'Failed to fetch mappings');
     }
   },
@@ -205,7 +158,6 @@ const realApi = {
         const currentMappingsResponse = await this.fetchMappings();
         currentConfig = currentMappingsResponse.config;
       } catch (error) {
-        console.warn('Could not fetch existing mappings, starting with empty configuration:', error);
         // If we can't fetch existing mappings, start with a default configuration
         currentConfig = {
           mappings: {},
@@ -236,17 +188,10 @@ const realApi = {
         auto_generated: false // Mark as manually updated
       };
 
-      console.log('Saving mappings configuration:', {
-        existingMappingsCount: currentConfig.mappings ? Object.keys(currentConfig.mappings).length : 0,
-        newMappingsCount: mappings.length,
-        totalMappingsCount: Object.keys(mappingsObject).length,
-        newMappings: mappings,
-        finalConfig: configToSave
-      });
+
 
       await apiClient.post('/mappings', configToSave);
     } catch (error: any) {
-      console.error('Failed to save mappings:', error);
       this.handleApiError(error, 'Failed to save mappings');
     }
   },
@@ -256,7 +201,6 @@ const realApi = {
     try {
       await apiClient.delete(`/mappings/${pocketsmithAccountId}`);
     } catch (error: any) {
-      console.error('Failed to delete mapping:', error);
       this.handleApiError(error, 'Failed to delete mapping');
     }
   },
@@ -275,7 +219,6 @@ const realApi = {
       
       return response.data.data;
     } catch (error: any) {
-      console.error('Failed to validate mappings:', error);
       this.handleApiError(error, 'Failed to validate mappings');
     }
   },
@@ -289,7 +232,6 @@ const realApi = {
         const currentMappingsResponse = await this.fetchMappings();
         currentConfig = currentMappingsResponse.config;
       } catch (error) {
-        console.warn('Could not fetch existing mappings, starting with empty configuration:', error);
         currentConfig = {
           mappings: {},
           strict_mode: true,
@@ -306,14 +248,10 @@ const realApi = {
         auto_generated: false // Mark as manually updated
       };
 
-      console.log('Updating mapping configuration:', {
-        oldConfig: currentConfig,
-        newConfig: configToSave
-      });
+
 
       await apiClient.post('/mappings', configToSave);
     } catch (error: any) {
-      console.error('Failed to update mapping configuration:', error);
       this.handleApiError(error, 'Failed to update mapping configuration');
     }
   },
@@ -326,7 +264,6 @@ const realApi = {
       const response = await apiClient.get<BalanceComparisonResponse>('/balances/compare');
       return response.data;
     } catch (error: any) {
-      console.error('Failed to fetch balance comparisons:', error);
       this.handleApiError(error, 'Failed to fetch balance comparisons');
     }
   },
@@ -337,7 +274,6 @@ const realApi = {
       const response = await apiClient.post<BalanceComparisonResponse>('/balances/refresh');
       return response.data;
     } catch (error: any) {
-      console.error('Failed to refresh balances:', error);
       this.handleApiError(error, 'Failed to refresh balances');
     }
   },

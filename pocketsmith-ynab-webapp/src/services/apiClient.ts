@@ -56,36 +56,14 @@ class ApiClient {
                 }
                 
                 config.headers.Authorization = `Bearer ${token}`;
-                
-                // Enhanced debugging to troubleshoot authorization header issue
-                console.log('🔐 Token debugging:', {
-                  url: config.url,
-                  method: config.method?.toUpperCase(),
-                  hasToken: !!token,
-                  tokenType: typeof token,
-                  tokenLength: token?.length,
-                  tokenPrefix: token?.substring(0, 50) + '...',
-                  tokenSuffix: '...' + token?.substring(token.length - 20),
-                  isJWT: token?.split('.').length === 3,
-                  authHeaderLength: `Bearer ${token}`.length,
-                  authHeaderPrefix: `Bearer ${token}`.substring(0, 100) + '...'
-                });
+
               } catch (tokenError) {
-                console.error('❌ Token validation failed:', tokenError);
                 // Continue without token rather than failing the request
-                console.warn('⚠️ Proceeding with request without authentication token');
               }
-            } else if (import.meta.env.DEV) {
-              console.warn('⚠️ User not authenticated, making request without token');
             }
-          } else if (import.meta.env.DEV) {
-            console.log('🔧 Auth not enabled, making request without token');
           }
         } catch (error) {
           // Authentication not available or failed - continue without token
-          if (import.meta.env.DEV) {
-            console.error('❌ Authentication error for API request:', error);
-          }
         }
         
         return config;
@@ -131,8 +109,6 @@ class ApiClient {
                 return this.client(originalRequest);
               }
             } catch (refreshError) {
-              console.error('Failed to refresh authentication session:', refreshError);
-              
               // If refresh fails, redirect to sign in
               // This could be handled by the auth context or a global error handler
               window.dispatchEvent(new CustomEvent('auth:session-expired'));

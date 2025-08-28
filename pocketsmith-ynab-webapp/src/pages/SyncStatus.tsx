@@ -61,7 +61,6 @@ export const SyncStatus: React.FC = () => {
       setLastUpdated(new Date());
     } catch (err: any) {
       setError(err.message);
-      console.error('Failed to fetch sync data:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

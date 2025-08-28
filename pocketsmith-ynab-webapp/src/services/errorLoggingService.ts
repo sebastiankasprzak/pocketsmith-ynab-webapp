@@ -223,14 +223,12 @@ class ErrorLoggingService {
       this.sequenceToken = response.nextSequenceToken;
       this.logBuffer = [];
     } catch (error) {
-      console.error('Failed to flush logs to CloudWatch:', error);
       // Don't throw here to avoid infinite loops
     }
   }
 
   private async addToBuffer(logEntry: ErrorLogEntry): Promise<void> {
     if (!this.isEnabled) {
-      console.log(`[${logEntry.level.toUpperCase()}]`, logEntry.message, logEntry);
       return;
     }
 
@@ -259,15 +257,14 @@ class ErrorLoggingService {
         logStreamName: this.logStreamName,
       }));
     } catch (error) {
-      console.error('Failed to initialize CloudWatch log stream:', error);
       this.isEnabled = false; // Disable logging if setup fails
     }
   }
 
   private startPeriodicFlush(): void {
     setInterval(() => {
-      this.flush().catch(error => {
-        console.error('Periodic log flush failed:', error);
+      this.flush().catch(() => {
+        // Silently fail periodic flush
       });
     }, this.flushInterval);
 

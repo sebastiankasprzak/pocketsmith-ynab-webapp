@@ -266,7 +266,6 @@ export const AccountMappings: React.FC = () => {
 
       // Show warnings if any
       if (clientValidation.warnings.length > 0) {
-        console.warn('Mapping warnings:', clientValidation.warnings);
         // You could show warnings to the user here if desired
       }
     }

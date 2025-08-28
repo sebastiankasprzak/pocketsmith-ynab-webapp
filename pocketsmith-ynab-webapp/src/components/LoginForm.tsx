@@ -31,7 +31,6 @@ export const LoginForm: React.FC = () => {
       await signIn(email, password);
     } catch (err) {
       // Error is already handled by AuthContext
-      console.error('Login failed:', err);
     }
   };
 

@@ -8,14 +8,12 @@ export const formatTimestamp = (timestamp: string | Date): string => {
     const date = typeof timestamp === 'string' ? parseISO(timestamp) : timestamp;
     
     if (!isValid(date)) {
-      console.warn('Invalid date provided to formatTimestamp:', timestamp);
       return 'Invalid Date';
     }
 
     // Format with user's local timezone
     return format(date, 'MMM dd, yyyy HH:mm:ss');
   } catch (error) {
-    console.error('Error formatting timestamp:', error);
     return 'Invalid Date';
   }
 };
@@ -28,13 +26,11 @@ export const formatRelativeTime = (timestamp: string | Date): string => {
     const date = typeof timestamp === 'string' ? parseISO(timestamp) : timestamp;
     
     if (!isValid(date)) {
-      console.warn('Invalid date provided to formatRelativeTime:', timestamp);
       return 'Invalid Date';
     }
 
     return formatDistanceToNow(date, { addSuffix: true });
   } catch (error) {
-    console.error('Error formatting relative time:', error);
     return 'Invalid Date';
   }
 };
@@ -47,7 +43,6 @@ export const formatTableTimestamp = (timestamp: string | Date): string => {
     const date = typeof timestamp === 'string' ? parseISO(timestamp) : timestamp;
     
     if (!isValid(date)) {
-      console.warn('Invalid date provided to formatTableTimestamp:', timestamp);
       return 'Invalid Date';
     }
 
@@ -67,7 +62,6 @@ export const formatTableTimestamp = (timestamp: string | Date): string => {
       return format(date, 'MMM dd HH:mm');
     }
   } catch (error) {
-    console.error('Error formatting table timestamp:', error);
     return 'Invalid Date';
   }
 };
@@ -80,7 +74,6 @@ export const formatTooltipTimestamp = (timestamp: string | Date): string => {
     const date = typeof timestamp === 'string' ? parseISO(timestamp) : timestamp;
     
     if (!isValid(date)) {
-      console.warn('Invalid date provided to formatTooltipTimestamp:', timestamp);
       return 'Invalid Date';
     }
 
@@ -95,7 +88,6 @@ export const formatTooltipTimestamp = (timestamp: string | Date): string => {
       timeZoneName: 'short'
     });
   } catch (error) {
-    console.error('Error formatting tooltip timestamp:', error);
     return 'Invalid Date';
   }
 };
@@ -143,7 +135,6 @@ export const isWithinDays = (timestamp: string | Date, days: number): boolean =>
     const cutoff = getDaysAgo(days);
     return date >= cutoff;
   } catch (error) {
-    console.error('Error checking if date is within days:', error);
     return false;
   }
 };

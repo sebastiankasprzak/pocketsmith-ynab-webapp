@@ -36,7 +36,7 @@ export const UserProfile: React.FC = () => {
     try {
       await signOut();
     } catch (error) {
-      console.error('Sign out failed:', error);
+      // Silently handle sign out error
     }
   };
 

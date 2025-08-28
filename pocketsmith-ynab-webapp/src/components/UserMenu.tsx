@@ -36,7 +36,7 @@ export const UserMenu: React.FC = () => {
       await signOut();
       handleClose();
     } catch (error) {
-      console.error('Sign out failed:', error);
+      // Silently handle sign out error
     }
   };
 

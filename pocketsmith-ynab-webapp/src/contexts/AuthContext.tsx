@@ -59,7 +59,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
       }
     } catch (err) {
-      console.debug('No authenticated user found:', err);
       setUser(null);
     } finally {
       setLoading(false);

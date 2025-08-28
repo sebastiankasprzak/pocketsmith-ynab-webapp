@@ -19,7 +19,6 @@ import {
   Cached as CachedIcon
 } from '@mui/icons-material';
 import { BalanceComparisonTable } from '../components/BalanceComparisonTable';
-import { DebugPanel } from '../components/DebugPanel';
 import { useBalanceComparisons } from '../hooks/useBalanceComparisons';
 
 export const BalanceComparison: React.FC = () => {
@@ -85,9 +84,6 @@ export const BalanceComparison: React.FC = () => {
 
   return (
     <Box>
-      {/* Debug Panel - Remove this once issue is resolved */}
-      <DebugPanel />
-      
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>

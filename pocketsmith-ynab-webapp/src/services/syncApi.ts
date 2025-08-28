@@ -142,7 +142,6 @@ class SyncApiService {
       const response = await apiClient.get<SyncMonitoringResult>('/sync/status');
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get sync status:', error);
       this.handleApiError(error, 'Failed to get sync status');
     }
   }
@@ -157,7 +156,6 @@ class SyncApiService {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get sync history:', error);
       this.handleApiError(error, 'Failed to get sync history');
     }
   }
@@ -170,7 +168,6 @@ class SyncApiService {
       const response = await apiClient.get<SyncProgressResponse>(`/sync/progress/${syncId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get sync progress:', error);
       this.handleApiError(error, 'Failed to get sync progress');
     }
   }
@@ -188,7 +185,6 @@ class SyncApiService {
       const response = await apiClient.get<LogStreamResponse>('/sync/logs/stream', { params });
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get log stream:', error);
       this.handleApiError(error, 'Failed to get log stream');
     }
   }
@@ -201,7 +197,6 @@ class SyncApiService {
       const response = await apiClient.get<HealthCheckResponse>('/sync/health');
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get health check:', error);
       this.handleApiError(error, 'Failed to get health check');
     }
   }
@@ -214,7 +209,6 @@ class SyncApiService {
       const response = await apiClient.post<SyncTriggerResponse>('/sync/trigger', request);
       return response.data;
     } catch (error: any) {
-      console.error('Failed to trigger sync:', error);
       this.handleApiError(error, 'Failed to trigger sync');
     }
   }

@@ -88,7 +88,7 @@ export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
           onReset={reset}
           FallbackComponent={Fallback}
           onError={(error, errorInfo) => {
-            console.error('Query Error Boundary caught an error:', error, errorInfo);
+            // Silently handle query errors
           }}
         >
           {children}

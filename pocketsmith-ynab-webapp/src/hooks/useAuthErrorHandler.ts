@@ -22,8 +22,6 @@ export const useAuthErrorHandler = () => {
         'MISSING_AUTH_HEADER'
       ].includes(error.code)) {
         
-        console.warn('Authentication error detected in query:', error);
-        
         // Only sign out if user was previously authenticated
         if (isAuthenticated) {
           // Clear all queries to prevent stale data

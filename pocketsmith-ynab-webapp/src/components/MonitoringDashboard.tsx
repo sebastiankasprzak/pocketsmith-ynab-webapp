@@ -141,7 +141,6 @@ export const MonitoringDashboard: React.FC = () => {
         });
 
       } catch (error) {
-        console.error('Failed to load metrics:', error);
         errorLoggingService.logError(error as Error, {
           page: 'monitoring-dashboard',
         });

@@ -13,7 +13,6 @@ const isAuthConfigured = () => {
 // Configure Amplify with Cognito settings
 const configureAuth = () => {
   if (!isAuthConfigured()) {
-    console.warn('Cognito configuration not found. Authentication will be disabled.');
     return;
   }
 
@@ -26,9 +25,8 @@ const configureAuth = () => {
         }
       }
     });
-    console.log('AWS Amplify configured successfully');
   } catch (error) {
-    console.error('Failed to configure AWS Amplify:', error);
+    // Silently fail auth configuration
   }
 };
 
@@ -89,7 +87,6 @@ class AuthService {
         throw new Error('Sign in incomplete - additional steps required');
       }
     } catch (error) {
-      console.error('Sign in error:', error);
       throw new Error(`Sign in failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -105,7 +102,6 @@ class AuthService {
     try {
       await signOut();
     } catch (error) {
-      console.error('Sign out error:', error);
       throw new Error(`Sign out failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -126,7 +122,6 @@ class AuthService {
         name: user.username
       };
     } catch (error) {
-      console.error('Get current user error:', error);
       throw new Error('No authenticated user found');
     }
   }
@@ -152,7 +147,6 @@ class AuthService {
         refreshToken: session.tokens.refreshToken?.toString() || ''
       };
     } catch (error) {
-      console.error('Get tokens error:', error);
       throw new Error('Failed to retrieve auth tokens');
     }
   }
@@ -180,22 +174,8 @@ class AuthService {
         throw new Error(`Invalid JWT format: expected 3 parts, got ${tokenParts.length}`);
       }
       
-      // Enhanced debugging
-      console.log('🔐 Token validation:', {
-        hasIdToken: !!tokens.idToken,
-        hasAccessToken: !!tokens.accessToken,
-        idTokenLength: tokens.idToken?.length,
-        accessTokenLength: tokens.accessToken?.length,
-        idTokenParts: tokenParts.length,
-        idTokenHeader: tokenParts[0]?.substring(0, 20) + '...',
-        idTokenPayload: tokenParts[1]?.substring(0, 20) + '...',
-        idTokenSignature: tokenParts[2]?.substring(0, 20) + '...',
-        fullIdToken: tokens.idToken
-      });
-      
       return tokens.idToken;
     } catch (error) {
-      console.error('Get ID token error:', error);
       throw new Error(`Failed to retrieve ID token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -236,7 +216,6 @@ class AuthService {
     try {
       await fetchAuthSession({ forceRefresh: true });
     } catch (error) {
-      console.error('Refresh session error:', error);
       throw new Error('Failed to refresh authentication session');
     }
   }
