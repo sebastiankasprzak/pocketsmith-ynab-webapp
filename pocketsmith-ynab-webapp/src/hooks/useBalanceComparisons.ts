@@ -43,9 +43,27 @@ export const useBalanceComparisons = (
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Calculate cache expiry status
-  const isCacheExpired = data ? new Date(data.cacheExpiry) <= new Date() : true;
-  const timeUntilExpiry = data 
-    ? Math.max(0, new Date(data.cacheExpiry).getTime() - new Date().getTime())
+  // For real API, use a default cache duration since cacheExpiry is not provided
+  const getCacheExpiry = (data: BalanceComparisonResponse | null, fetchTime: Date | null) => {
+    if (!data) return null;
+    
+    // If legacy cacheExpiry field exists (mock API), use it
+    if (data.cacheExpiry) {
+      return new Date(data.cacheExpiry);
+    }
+    
+    // For real API, calculate expiry based on when we fetched the data + 5 minutes
+    if (fetchTime) {
+      return new Date(fetchTime.getTime() + 5 * 60 * 1000); // 5 minutes from fetch time
+    }
+    
+    return null;
+  };
+
+  const cacheExpiry = getCacheExpiry(data, lastFetchTime);
+  const isCacheExpired = cacheExpiry ? cacheExpiry <= new Date() : false; // Don't consider expired if no cache expiry
+  const timeUntilExpiry = cacheExpiry 
+    ? Math.max(0, cacheExpiry.getTime() - new Date().getTime())
     : 0;
 
   // Check if local cache is stale based on our timeout
@@ -78,11 +96,18 @@ export const useBalanceComparisons = (
     try {
       setError(null);
       
+      // Calculate cache status at fetch time to avoid stale closures
+      const currentCacheExpiry = getCacheExpiry(data, lastFetchTime);
+      const currentIsCacheExpired = currentCacheExpiry ? currentCacheExpiry <= new Date() : false;
+      const currentIsLocalCacheStale = lastFetchTime 
+        ? (new Date().getTime() - lastFetchTime.getTime()) > opts.cacheTimeout
+        : true;
+      
       // Determine if we should use cached data or fetch fresh
       const shouldFetchFresh = forceRefresh || 
         !data || 
-        isCacheExpired || 
-        isLocalCacheStale;
+        currentIsCacheExpired || 
+        currentIsLocalCacheStale;
 
       if (shouldFetchFresh) {
         if (data) {
@@ -92,7 +117,7 @@ export const useBalanceComparisons = (
         }
 
         // Use refresh endpoint if we're forcing refresh or cache is expired
-        const response = forceRefresh || isCacheExpired
+        const response = forceRefresh || currentIsCacheExpired
           ? await accountsApi.refreshBalances()
           : await accountsApi.fetchBalanceComparisons();
 
@@ -117,8 +142,8 @@ export const useBalanceComparisons = (
         {
           component: 'useBalanceComparisons',
           action: forceRefresh ? 'forceRefresh' : 'refresh',
-          cacheExpired: isCacheExpired,
-          localCacheStale: isLocalCacheStale
+          cacheExpired: currentIsCacheExpired,
+          localCacheStale: currentIsLocalCacheStale
         }
       );
 
@@ -129,7 +154,7 @@ export const useBalanceComparisons = (
       setLoading(false);
       setRefreshing(false);
     }
-  }, [data, isCacheExpired, isLocalCacheStale]);
+  }, [data, lastFetchTime, opts.cacheTimeout]);
 
   // Setup auto-refresh timer
   const setupAutoRefresh = useCallback(() => {
@@ -140,9 +165,12 @@ export const useBalanceComparisons = (
     // Calculate next refresh time based on cache expiry
     let nextRefreshDelay = opts.autoRefreshInterval;
     
-    if (data && !isCacheExpired) {
+    const currentCacheExpiry = getCacheExpiry(data, lastFetchTime);
+    const currentIsCacheExpired = currentCacheExpiry ? currentCacheExpiry <= new Date() : false;
+    
+    if (data && !currentIsCacheExpired && currentCacheExpiry) {
       // If we have data and it's not expired, wait until it expires plus a small buffer
-      const timeUntilCacheExpiry = new Date(data.cacheExpiry).getTime() - new Date().getTime();
+      const timeUntilCacheExpiry = currentCacheExpiry.getTime() - new Date().getTime();
       if (timeUntilCacheExpiry > 0) {
         nextRefreshDelay = Math.min(timeUntilCacheExpiry + 30000, opts.autoRefreshInterval); // 30s buffer
       }
@@ -151,7 +179,7 @@ export const useBalanceComparisons = (
     autoRefreshTimerRef.current = setTimeout(() => {
       fetchBalanceData(false);
     }, nextRefreshDelay);
-  }, [data, isCacheExpired, opts.enableAutoRefresh, opts.autoRefreshInterval, fetchBalanceData, cleanup]);
+  }, [data, lastFetchTime, opts.enableAutoRefresh, opts.autoRefreshInterval, fetchBalanceData, cleanup]);
 
   // Public refresh function (uses cache if available)
   const refresh = useCallback(async () => {

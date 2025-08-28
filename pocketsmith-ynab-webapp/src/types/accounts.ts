@@ -87,9 +87,11 @@ export interface BalanceComparison {
   pocketsmithAccountId: string;
   pocketsmithAccountName: string;
   pocketsmithBalance: number;
+  pocketsmithBalanceDate: string;
   ynabAccountId: string;
   ynabAccountName: string;
   ynabBalance: number;
+  ynabClearedBalance: number;
   difference: number;
   currency: string;
   lastUpdated: string;
@@ -97,8 +99,25 @@ export interface BalanceComparison {
   discrepancyThreshold: number; // e.g., 0.01 for 1 cent
 }
 
+export interface BalanceComparisonSummary {
+  totalMappings: number;
+  discrepancies: number;
+  totalDifference: number;
+  lastUpdated: string;
+}
+
+export interface BalanceComparisonMetadata {
+  fromCache: boolean;
+  discrepancyThreshold: number;
+  includeClosed: boolean;
+}
+
 export interface BalanceComparisonResponse {
   comparisons: BalanceComparison[];
-  lastUpdated: string;
-  cacheExpiry: string;
+  summary: BalanceComparisonSummary;
+  errors: string[];
+  metadata: BalanceComparisonMetadata;
+  // Legacy fields for backward compatibility with mock API
+  lastUpdated?: string;
+  cacheExpiry?: string;
 }

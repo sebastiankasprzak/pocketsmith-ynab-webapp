@@ -253,9 +253,11 @@ export const mockApi = {
           pocketsmithAccountId: psAccount.id.toString(),
           pocketsmithAccountName: psAccount.title || psAccount.name || `Account ${psAccount.id}`,
           pocketsmithBalance: psAccount.current_balance,
+          pocketsmithBalanceDate: psAccount.current_balance_date,
           ynabAccountId: ynabAccount.id,
           ynabAccountName: ynabAccount.name,
           ynabBalance: ynabBalanceInDollars,
+          ynabClearedBalance: ynabAccount.cleared_balance / 1000,
           difference: difference,
           currency: psAccount.currency_code,
           lastUpdated: now,
@@ -277,11 +279,13 @@ export const mockApi = {
         
         comparisons.push({
           pocketsmithAccountId: psCredit.id.toString(),
-          pocketsmithAccountName: psCredit.name,
+          pocketsmithAccountName: psCredit.title || psCredit.name || `Account ${psCredit.id}`,
           pocketsmithBalance: psCredit.current_balance,
+          pocketsmithBalanceDate: psCredit.current_balance_date,
           ynabAccountId: ynabCredit.id,
           ynabAccountName: ynabCredit.name,
           ynabBalance: ynabBalanceInDollars,
+          ynabClearedBalance: ynabCredit.cleared_balance / 1000,
           difference: difference,
           currency: psCredit.currency_code,
           lastUpdated: now,
@@ -300,11 +304,13 @@ export const mockApi = {
         
         comparisons.push({
           pocketsmithAccountId: psSavings.id.toString(),
-          pocketsmithAccountName: psSavings.name,
+          pocketsmithAccountName: psSavings.title || psSavings.name || `Account ${psSavings.id}`,
           pocketsmithBalance: psSavings.current_balance,
+          pocketsmithBalanceDate: psSavings.current_balance_date,
           ynabAccountId: ynabSavings.id,
           ynabAccountName: ynabSavings.name,
           ynabBalance: ynabBalanceInDollars,
+          ynabClearedBalance: ynabSavings.cleared_balance / 1000,
           difference: difference,
           currency: psSavings.currency_code,
           lastUpdated: now,
@@ -316,6 +322,19 @@ export const mockApi = {
     
     return {
       comparisons,
+      summary: {
+        totalMappings: comparisons.length,
+        discrepancies: comparisons.filter(c => c.hasDiscrepancy).length,
+        totalDifference: comparisons.reduce((sum, c) => sum + Math.abs(c.difference), 0),
+        lastUpdated: now
+      },
+      errors: [],
+      metadata: {
+        fromCache: false,
+        discrepancyThreshold: discrepancyThreshold,
+        includeClosed: false
+      },
+      // Legacy fields for backward compatibility
       lastUpdated: now,
       cacheExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes from now
     };

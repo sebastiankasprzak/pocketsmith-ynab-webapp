@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Typography,
   Box,
   Button,
-  Alert,
   CircularProgress,
   Chip,
   Stack,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  Alert
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -22,6 +23,7 @@ import { DebugPanel } from '../components/DebugPanel';
 import { useBalanceComparisons } from '../hooks/useBalanceComparisons';
 
 export const BalanceComparison: React.FC = () => {
+  const navigate = useNavigate();
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   
   const {
@@ -101,7 +103,7 @@ export const BalanceComparison: React.FC = () => {
             <>
               <Chip
                 icon={<ScheduleIcon />}
-                label={`Updated: ${formatLastUpdated(balanceData.lastUpdated)}`}
+                label={`Updated: ${formatLastUpdated(balanceData.summary?.lastUpdated || balanceData.lastUpdated || '')}`}
                 variant="outlined"
                 size="small"
               />
@@ -211,11 +213,26 @@ export const BalanceComparison: React.FC = () => {
       )}
 
       {/* Balance comparison table */}
-      {balanceData && (
+      {balanceData && balanceData.comparisons && balanceData.comparisons.length > 0 && (
         <BalanceComparisonTable 
           comparisons={balanceData.comparisons}
           loading={refreshing}
         />
+      )}
+
+      {/* No comparisons available */}
+      {balanceData && (!balanceData.comparisons || balanceData.comparisons.length === 0) && (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No balance comparisons found
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            No account mappings are configured for balance comparison. Please set up account mappings first.
+          </Typography>
+          <Button variant="outlined" onClick={() => navigate('/account-mappings')}>
+            Configure Account Mappings
+          </Button>
+        </Box>
       )}
 
       {/* No data state */}
@@ -225,7 +242,7 @@ export const BalanceComparison: React.FC = () => {
             No balance data available
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Unable to load balance comparisons. This might be due to missing account mappings or API connectivity issues.
+            Unable to load balance comparisons. This might be due to API connectivity issues.
           </Typography>
           <Button variant="outlined" onClick={() => refresh()}>
             Try Again
