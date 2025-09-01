@@ -39,6 +39,27 @@ body {
   width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
+  /* iOS-specific improvements */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* iOS device-specific styles */
+body.ios-device {
+  /* Prevent bounce scrolling on iOS */
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body.ios-device #root {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 h1 {

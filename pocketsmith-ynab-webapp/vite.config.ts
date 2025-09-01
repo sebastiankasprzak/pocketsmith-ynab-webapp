@@ -35,9 +35,27 @@ export default defineConfig({
         theme_color: '#1976d2',
         background_color: '#ffffff',
         display: 'standalone',
-        orientation: 'portrait',
+        display_override: ['window-controls-overlay', 'standalone'],
+        orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
+        categories: ['finance', 'productivity', 'utilities'],
+        shortcuts: [
+          {
+            name: 'Quick Sync',
+            short_name: 'Sync',
+            description: 'Start a manual sync',
+            url: '/sync',
+            icons: [{ src: 'sync-icon.svg', sizes: '192x192' }]
+          },
+          {
+            name: 'View Accounts',
+            short_name: 'Accounts',
+            description: 'Manage account mappings',
+            url: '/accounts',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
+        ],
         icons: [
           {
             src: 'pwa-48x48.png',
@@ -80,6 +98,18 @@ export default defineConfig({
             sizes: '180x180',
             type: 'image/png',
             purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }
