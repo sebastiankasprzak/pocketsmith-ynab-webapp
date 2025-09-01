@@ -161,7 +161,7 @@ export const BalanceComparison: React.FC = () => {
         </Stack>
         
         {/* Cache progress indicator */}
-        {balanceData && timeUntilExpiry > 0 && (
+        {balanceData && cacheProgress > 0 && (
           <Box sx={{ mt: 2 }}>
             <LinearProgress 
               variant="determinate" 
@@ -171,7 +171,7 @@ export const BalanceComparison: React.FC = () => {
                 borderRadius: 2,
                 backgroundColor: 'grey.200',
                 '& .MuiLinearProgress-bar': {
-                  backgroundColor: isCacheExpired ? 'warning.main' : 'primary.main'
+                  backgroundColor: isStale ? 'warning.main' : 'primary.main'
                 }
               }} 
             />
@@ -183,10 +183,10 @@ export const BalanceComparison: React.FC = () => {
       </Box>
 
       {/* Cache expiry warning */}
-      {balanceData && isCacheExpired && (
+      {balanceData && isStale && cacheAgeMinutes > 5 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="body2">
-            Balance data has expired. Click "Refresh Balances" to get the latest information from both PocketSmith and YNAB.
+            Balance data is stale (last updated {cacheAgeMinutes} minutes ago). Click "Refresh" to get the latest information from both PocketSmith and YNAB.
           </Typography>
         </Alert>
       )}

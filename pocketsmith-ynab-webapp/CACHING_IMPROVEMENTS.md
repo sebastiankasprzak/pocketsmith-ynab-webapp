@@ -133,6 +133,15 @@ cacheInvalidation.afterSync(queryClient);
 3. **Smart Invalidation**: Reduced over-fetching
 4. **Type Safety**: Full TypeScript support for query keys
 
+## Bug Fixes Applied
+
+### Balance Comparison Page Error ✅
+**Issue**: `timeUntilExpiry is not defined` error on Balance Comparison page
+**Fix**: Updated cache status indicators to use new React Query-based properties:
+- Replaced `timeUntilExpiry` with `cacheAgeMinutes` calculations
+- Replaced `isCacheExpired` with `isStale` property
+- Updated cache progress and warning logic
+
 ## Testing the Improvements
 
 ### Manual Testing:
@@ -140,12 +149,14 @@ cacheInvalidation.afterSync(queryClient);
 2. Check React Query DevTools (bottom-left icon in dev mode)
 3. Observe cache hits vs network requests
 4. Test refresh behaviors
+5. Visit Balance Comparison page to verify cache status display
 
 ### Expected Behavior:
 - First visit: Network requests as expected
 - Subsequent visits within cache time: Instant loading from cache
 - Stale data: Background refresh while showing cached data
 - Manual refresh: Immediate fresh data fetch
+- Balance page: Proper cache age and staleness indicators
 
 ## Monitoring Cache Performance
 

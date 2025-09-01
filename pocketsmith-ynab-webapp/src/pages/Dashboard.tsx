@@ -499,45 +499,7 @@ export const Dashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* CSS for animations */}
-      <style>
-        {`
-          @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .rotating {
-            animation: rotate 2s linear infinite;
-          }
-          
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-          }
-          
-          .fade-in {
-            animation: fadeIn 0.3s ease-out;
-          }
-          
-          .pulse {
-            animation: pulse 2s infinite;
-          }
-          
-          .card-hover {
-            transition: all 0.2s ease-in-out;
-          }
-          
-          .card-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-          }
-        `}
-      </style>
+
     </Box>
   );
 };

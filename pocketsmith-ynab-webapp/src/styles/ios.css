@@ -255,44 +255,7 @@ body {
   display: none;
 }
 
-/* Duplicate tab bar styles removed - already defined above */
 
-.ios-tab-bar.dark {
-  background: rgba(28, 28, 30, 0.8);
-  border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-.ios-tab-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 0;
-  text-decoration: none;
-  color: #8E8E93;
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 12px;
-  -webkit-tap-highlight-color: transparent;
-  transition: color 0.2s ease;
-}
-
-.ios-tab-item.active {
-  color: #007AFF;
-}
-
-.ios-tab-item:active {
-  opacity: 0.3;
-}
-
-.ios-tab-icon {
-  width: 24px;
-  height: 24px;
-  margin-bottom: 2px;
-}
-
-/* Duplicate ios-content rule removed */
 
 /* iOS-style list items */
 .ios-list-item {
@@ -455,8 +418,7 @@ body {
   transform: translateX(-50%) translateY(60px);
 }
 
-/* Phas
-e 2: Advanced iOS Animations and Effects */
+/* Phase 2: Advanced iOS Animations and Effects */
 
 /* iOS Context Menu Animations */
 @keyframes contextMenuScale {
@@ -806,7 +768,6 @@ e 2: Advanced iOS Animations and Effects */
   .pwa-content-area {
     background-color: #1c1c1e;
   }
-}
 
   #root {
     background-color: #1c1c1e;
@@ -872,8 +833,7 @@ e 2: Advanced iOS Animations and Effects */
   }
 }
 
-/* iO
-S device-specific adjustments */
+/* iOS device-specific adjustments */
 
 /* iPhone SE and smaller devices */
 @media screen and (max-width: 375px) {
