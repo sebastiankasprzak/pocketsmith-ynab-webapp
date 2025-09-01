@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Typography,
   Box,
@@ -7,61 +7,55 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
+  Chip,
+  Tooltip,
 } from '@mui/material';
 import {
   Refresh,
   Settings,
+  Info as InfoIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import ManualSyncDialog from '../components/ManualSyncDialog';
 import { SyncProgressTracker } from '../components/SyncProgressTracker';
 import ModernSyncStatusCard from '../components/ModernSyncStatusCard';
 import AccountSyncStateTable from '../components/AccountSyncStateTable';
 import RecentActivityCard from '../components/RecentActivityCard';
-import { syncApiService } from '../services/syncApi';
-import type { 
-  SyncTriggerResponse,
-  SyncStateOverview,
-  RecentActivityResponse
-} from '../services/syncApi';
+import { useSyncStatus, useSyncMonitoring } from '../hooks/useSyncStatus';
+import type { SyncTriggerResponse, SyncStateOverview } from '../services/syncApi';
 
 export const SyncStatus: React.FC = () => {
-  const [syncStateOverview, setSyncStateOverview] = useState<SyncStateOverview | null>(null);
-  const [recentActivity, setRecentActivity] = useState<RecentActivityResponse | null>(null);
   const [activityHours, setActivityHours] = useState(24);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Manual sync dialog and progress tracking
   const [showManualSyncDialog, setShowManualSyncDialog] = useState(false);
   const [showProgressTracker, setShowProgressTracker] = useState(false);
   const [currentSyncResponse, setCurrentSyncResponse] = useState<SyncTriggerResponse | null>(null);
 
-  const fetchSyncData = useCallback(async () => {
-    try {
-      setError(null);
-      const [stateOverview, activityData] = await Promise.all([
-        syncApiService.getSyncStateOverview(),
-        syncApiService.getRecentActivity(activityHours)
-      ]);
+  // Use React Query hooks for data management
+  const {
+    syncStateOverview,
+    recentActivity,
+    isLoading,
+    isRefreshing,
+    hasError,
+    syncStateError,
+    recentActivityError,
+    lastUpdated,
+    refreshAllData,
+    triggerSyncAsync,
+    isSyncTriggering,
+    syncTriggerError,
+  } = autoRefresh 
+    ? useSyncMonitoring() 
+    : useSyncStatus({ 
+        autoRefresh: false, 
+        activityHours 
+      });
 
-      setSyncStateOverview(stateOverview);
-      setRecentActivity(activityData);
-      setLastUpdated(new Date());
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [activityHours]);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchSyncData();
+  const handleRefresh = () => {
+    refreshAllData();
   };
 
   const handleOpenManualSyncDialog = () => {
@@ -72,13 +66,19 @@ export const SyncStatus: React.FC = () => {
     setShowManualSyncDialog(false);
   };
 
-  const handleSyncTriggered = (response: SyncTriggerResponse) => {
-    setCurrentSyncResponse(response);
-    setShowProgressTracker(true);
-    // Refresh data after triggering sync
-    setTimeout(() => {
-      handleRefresh();
-    }, 2000);
+  const handleSyncTriggered = async (options: { 
+    forceSync?: boolean; 
+    accountIds?: string[]; 
+    dateRange?: { startDate: string; endDate: string } 
+  } = {}) => {
+    try {
+      const response = await triggerSyncAsync(options);
+      setCurrentSyncResponse(response);
+      setShowProgressTracker(true);
+      // Data will be automatically refreshed by React Query after mutation
+    } catch (error) {
+      console.error('Failed to trigger sync:', error);
+    }
   };
 
   const handleCloseProgressTracker = () => {
@@ -99,30 +99,7 @@ export const SyncStatus: React.FC = () => {
     setActivityHours(hours);
   };
 
-  // Enhanced auto-refresh with configurable intervals
-  useEffect(() => {
-    fetchSyncData();
-  }, [fetchSyncData]);
-
-  useEffect(() => {
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-    }
-
-    if (autoRefresh) {
-      // Refresh every 30 seconds when auto-refresh is enabled
-      const newInterval = setInterval(fetchSyncData, 30000);
-      setRefreshInterval(newInterval);
-    }
-
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [autoRefresh, fetchSyncData]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Box py={4} display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -145,6 +122,14 @@ export const SyncStatus: React.FC = () => {
           <Typography variant="body2" color="text.secondary">
             {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
           </Typography>
+          {isRefreshing && (
+            <Chip 
+              size="small" 
+              label="Refreshing..." 
+              color="primary" 
+              icon={<CircularProgress size={12} />} 
+            />
+          )}
         </Box>
         <Box 
           display="flex" 
@@ -169,7 +154,7 @@ export const SyncStatus: React.FC = () => {
             variant="outlined"
             startIcon={<Settings />}
             onClick={handleOpenManualSyncDialog}
-            disabled={refreshing}
+            disabled={isRefreshing || isSyncTriggering}
             fullWidth={false}
             sx={{ minWidth: { xs: 'auto', sm: 140 } }}
           >
@@ -177,20 +162,22 @@ export const SyncStatus: React.FC = () => {
           </Button>
           <Button
             variant="outlined"
-            startIcon={refreshing ? <CircularProgress size={16} /> : <Refresh />}
+            startIcon={isRefreshing ? <CircularProgress size={16} /> : <Refresh />}
             onClick={handleRefresh}
-            disabled={refreshing}
+            disabled={isRefreshing}
             fullWidth={false}
             sx={{ minWidth: { xs: 'auto', sm: 100 } }}
           >
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
         </Box>
       </Box>
 
-      {error && (
+      {hasError && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          {syncStateError && <div>Sync State Error: {syncStateError}</div>}
+          {recentActivityError && <div>Recent Activity Error: {recentActivityError}</div>}
+          {syncTriggerError && <div>Sync Trigger Error: {syncTriggerError}</div>}
         </Alert>
       )}
 
@@ -199,7 +186,7 @@ export const SyncStatus: React.FC = () => {
         <ModernSyncStatusCard
           syncStateOverview={syncStateOverview}
           onRefresh={handleRefresh}
-          loading={refreshing}
+          loading={isRefreshing}
         />
       )}
 
@@ -210,7 +197,7 @@ export const SyncStatus: React.FC = () => {
             recentActivity={recentActivity.recent_activity}
             hours={activityHours}
             onHoursChange={handleActivityHoursChange}
-            loading={refreshing}
+            loading={isRefreshing}
           />
         </Box>
       )}
@@ -220,7 +207,7 @@ export const SyncStatus: React.FC = () => {
         <Box mb={3}>
           <AccountSyncStateTable
             accounts={syncStateOverview.accounts}
-            loading={refreshing}
+            loading={isRefreshing}
           />
         </Box>
       )}
@@ -231,7 +218,7 @@ export const SyncStatus: React.FC = () => {
         onClose={handleCloseManualSyncDialog}
         onSyncTriggered={handleSyncTriggered}
         currentQueueDepth={0}
-        syncInProgress={false}
+        syncInProgress={isSyncTriggering}
       />
 
       {/* Sync Progress Tracker */}

@@ -35,7 +35,11 @@ import type { PocketSmithAccount } from '../types/accounts';
 interface ManualSyncDialogProps {
   open: boolean;
   onClose: () => void;
-  onSyncTriggered: (response: SyncTriggerResponse) => void;
+  onSyncTriggered: (options: { 
+    forceSync?: boolean; 
+    accountIds?: string[]; 
+    dateRange?: { startDate: string; endDate: string } 
+  }) => Promise<void>;
   currentQueueDepth?: number;
   syncInProgress?: boolean;
 }
@@ -154,26 +158,29 @@ export const ManualSyncDialog: React.FC<ManualSyncDialogProps> = ({
       setLoading(true);
       setError(null);
 
-      const request: SyncTriggerRequest = {
+      const options: { 
+        forceSync?: boolean; 
+        accountIds?: string[]; 
+        dateRange?: { startDate: string; endDate: string } 
+      } = {
         forceSync,
       };
 
       if (useCustomDateRange && startDate && endDate) {
-        request.dateRange = {
+        options.dateRange = {
           startDate: startDate.toISOString().split('T')[0], // YYYY-MM-DD format
           endDate: endDate.toISOString().split('T')[0],
         };
       }
 
       if (selectedAccountIds.length > 0) {
-        request.accountFilters = selectedAccountIds;
+        options.accountIds = selectedAccountIds;
       }
 
-      const response = await syncApiService.triggerSync(request);
-      onSyncTriggered(response);
+      await onSyncTriggered(options);
       handleClose();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to trigger sync');
     } finally {
       setLoading(false);
     }
