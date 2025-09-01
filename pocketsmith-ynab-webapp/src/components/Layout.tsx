@@ -15,7 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       minHeight: '100vh', 
       backgroundColor: 'background.default',
       width: '100%',
-      overflow: 'hidden'
+      overflow: 'auto'
     }}>
       <Container 
         maxWidth="lg" 

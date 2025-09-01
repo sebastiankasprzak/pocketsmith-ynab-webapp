@@ -16,28 +16,43 @@
   --ios-tab-label-height: 12px;
 }
 
-/* Full screen PWA body styling */
+/* Default iOS styles - preserve normal scrolling */
 html,
 body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: #000;
-  /* Black background for status bar area */
+  /* Allow normal scrolling by default */
+  overflow: auto;
 }
 
-/* Root app container for full screen */
 #root {
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  /* Dynamic viewport height */
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
+  /* Use min-height instead of height to allow content to expand */
   background-color: #ffffff;
-  /* Use app background color to extend into Dynamic Island area */
+}
+
+/* Full screen PWA body styling - Only apply when in iOS PWA mode */
+@media (display-mode: standalone) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    /* Black background for status bar area */
+  }
+
+  /* Root app container for full screen */
+  #root {
+    height: 100vh;
+    height: 100dvh;
+    /* Dynamic viewport height */
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    /* Use app background color to extend into Dynamic Island area */
+  }
 }
 
 /* iOS device detection and safe area application */
@@ -791,6 +806,7 @@ e 2: Advanced iOS Animations and Effects */
   .pwa-content-area {
     background-color: #1c1c1e;
   }
+}
 
   #root {
     background-color: #1c1c1e;
@@ -976,27 +992,49 @@ S device-specific adjustments */
   }
 }
 
-/* U
-tility classes for PWA fullscreen support */
+/* Utility classes for PWA fullscreen support - Only in standalone mode */
+@media (display-mode: standalone) {
+  .pwa-fullscreen-container {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    /* Use app background color to extend into Dynamic Island area */
+    background-color: #ffffff;
+  }
+
+  .pwa-content-area {
+    flex: 1;
+    background-color: #ffffff;
+    /* Extend content into safe areas, let individual elements handle spacing */
+    padding-top: 0;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Default PWA classes for browser mode - allow normal scrolling */
 .pwa-fullscreen-container {
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  /* Use app background color to extend into Dynamic Island area */
   background-color: #ffffff;
 }
 
 .pwa-content-area {
   flex: 1;
   background-color: #ffffff;
-  /* Extend content into safe areas, let individual elements handle spacing */
   padding-top: 0;
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  padding-left: 0;
+  padding-right: 0;
   padding-bottom: 0;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
 }
@@ -1010,21 +1048,23 @@ tility classes for PWA fullscreen support */
   background-color: #0d47a1;
 }
 
-/* Dynamic Island and notch support */
-@supports (top: env(safe-area-inset-top)) {
-  .pwa-content-area {
-    /* Content extends into Dynamic Island area */
-    padding-top: 0;
-    margin-top: 0;
-  }
+/* Dynamic Island and notch support - Only in PWA mode */
+@media (display-mode: standalone) {
+  @supports (top: env(safe-area-inset-top)) {
+    .pwa-content-area {
+      /* Content extends into Dynamic Island area */
+      padding-top: 0;
+      margin-top: 0;
+    }
 
-  .pwa-fullscreen-container {
-    /* Use app background to extend into Dynamic Island area */
-    background-color: #ffffff;
-  }
+    .pwa-fullscreen-container {
+      /* Use app background to extend into Dynamic Island area */
+      background-color: #ffffff;
+    }
 
-  .ios-content {
-    /* Padding handled by component sx prop */
+    .ios-content {
+      /* Padding handled by component sx prop */
+    }
   }
 }
 

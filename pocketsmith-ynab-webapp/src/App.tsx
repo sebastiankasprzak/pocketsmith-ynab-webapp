@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Box, CircularProgress } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { theme } from './theme';
 import { useIOSTheme } from './hooks/useIOSTheme';
 import { useIOSDetection } from './components/IOSLayout';
@@ -30,6 +31,7 @@ const SyncStatus = lazy(() => import('./pages/SyncStatus').then(module => ({ def
 const BalanceComparison = lazy(() => import('./pages/BalanceComparison').then(module => ({ default: module.BalanceComparison })));
 const IOSDemo = lazy(() => import('./pages/IOSDemo').then(module => ({ default: module.IOSDemo })));
 const SimpleIOSTest = lazy(() => import('./components/SimpleIOSTest').then(module => ({ default: module.SimpleIOSTest })));
+const ScrollTest = lazy(() => import('./pages/ScrollTest').then(module => ({ default: module.ScrollTest })));
 
 // Loading component for Suspense fallback
 const PageLoadingFallback = () => (
@@ -50,12 +52,20 @@ const PageLoadingFallback = () => (
   </Box>
 );
 
-// Create React Query client
+// Create React Query client with enhanced caching configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for 10 minutes after last use
       retry: 1,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      refetchOnMount: 'stale', // Only refetch on mount if data is stale
+      refetchOnReconnect: 'stale', // Only refetch on reconnect if data is stale
+      refetchInterval: false, // Disable automatic background refetching by default
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
@@ -95,6 +105,7 @@ const AppContent = () => {
               <Route path="/settings" element={<BalanceComparison />} />
               <Route path="/ios-demo" element={<IOSDemo />} />
               <Route path="/ios-test" element={<SimpleIOSTest />} />
+              <Route path="/scroll-test" element={<ScrollTest />} />
               {/* Legacy routes for compatibility */}
               <Route path="/account-mappings" element={<AccountMappings />} />
               <Route path="/sync-status" element={<SyncStatus />} />
@@ -136,6 +147,7 @@ const AppContent = () => {
                 <Route path="/settings" element={<BalanceComparison />} />
                 <Route path="/ios-demo" element={<IOSDemo />} />
                 <Route path="/ios-test" element={<SimpleIOSTest />} />
+                <Route path="/scroll-test" element={<ScrollTest />} />
                 {/* Legacy routes for compatibility */}
                 <Route path="/account-mappings" element={<AccountMappings />} />
                 <Route path="/sync-status" element={<SyncStatus />} />
@@ -189,7 +201,7 @@ function App() {
                         <Box 
                           sx={{ 
                             flexGrow: 1, 
-                            height: '100dvh',
+                            minHeight: '100dvh',
                             width: '100%',
                             display: 'flex',
                             flexDirection: 'column'
