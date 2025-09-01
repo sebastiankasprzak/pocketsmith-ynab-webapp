@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAccounts, useMappings } from './useAccountMappings';
-import { useBalanceComparisons } from './useBalanceComparisons';
+import { useBalanceComparisons } from './useBalanceComparisonsQuery';
+import { queryKeys, cacheInvalidation } from './queryKeys';
 import { syncApiService } from '../services/syncApi';
 import type { 
   AccountsResponse, 
@@ -184,23 +185,25 @@ export const useDashboardData = () => {
   const accounts = useAccounts();
   const mappings = useMappings();
   const balanceComparisons = useBalanceComparisons({
-    enableAutoRefresh: false, // We'll handle refresh manually
-    cacheTimeout: 5 * 60 * 1000 // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: false // No auto-refresh, manual only
   });
 
-  // Fetch sync state and recent activity
+  // Fetch sync state and recent activity with better caching
   const syncStateQuery = useQuery({
-    queryKey: ['syncState'],
+    queryKey: queryKeys.syncOverview(),
     queryFn: () => syncApiService.getSyncStateOverview(),
-    refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 10000, // Consider data stale after 10 seconds
+    staleTime: 30 * 1000, // 30 seconds - sync state changes frequently
+    gcTime: 2 * 60 * 1000, // 2 minutes in cache
+    refetchInterval: 60 * 1000, // Check every minute instead of 30 seconds
     retry: 1
   });
 
   const recentActivityQuery = useQuery({
-    queryKey: ['recentActivity'],
+    queryKey: queryKeys.recentActivity(24),
     queryFn: () => syncApiService.getRecentActivity(24), // Last 24 hours
-    staleTime: 15000, // Consider data stale after 15 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes - activity doesn't change as frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes in cache
     retry: 1
   });
 
@@ -219,7 +222,7 @@ export const useDashboardData = () => {
 
   const balanceDiscrepancies = {
     data: transformBalanceComparisons(balanceComparisons.data),
-    isLoading: balanceComparisons.loading,
+    isLoading: balanceComparisons.isLoading,
     error: balanceComparisons.error ? new Error(balanceComparisons.error) : null
   };
 
@@ -231,7 +234,7 @@ export const useDashboardData = () => {
 
   const metrics = {
     data: calculateMetrics(accounts.data, syncStateQuery.data, balanceComparisons.data),
-    isLoading: accounts.isLoading || syncStateQuery.isLoading || balanceComparisons.loading,
+    isLoading: accounts.isLoading || syncStateQuery.isLoading || balanceComparisons.isLoading,
     error: accounts.error || syncStateQuery.error || (balanceComparisons.error ? new Error(balanceComparisons.error) : null)
   };
 
@@ -245,22 +248,17 @@ export const useDashboardData = () => {
       return response;
     },
     onSuccess: () => {
-      // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({ queryKey: ['syncState'] });
-      queryClient.invalidateQueries({ queryKey: ['recentActivity'] });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['mappings'] });
-      // Force refresh balance comparisons
-      balanceComparisons.forceRefresh();
+      // Smart invalidation after sync operation
+      cacheInvalidation.afterSync(queryClient);
     }
   });
 
   const refreshAllData = () => {
-    queryClient.invalidateQueries({ queryKey: ['syncState'] });
-    queryClient.invalidateQueries({ queryKey: ['recentActivity'] });
-    queryClient.invalidateQueries({ queryKey: ['accounts'] });
-    queryClient.invalidateQueries({ queryKey: ['mappings'] });
-    balanceComparisons.forceRefresh();
+    // Invalidate all major data categories
+    cacheInvalidation.accounts(queryClient);
+    cacheInvalidation.mappings(queryClient);
+    cacheInvalidation.balances(queryClient);
+    cacheInvalidation.sync(queryClient);
   };
 
   return {

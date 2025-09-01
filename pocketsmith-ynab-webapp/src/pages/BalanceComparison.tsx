@@ -19,7 +19,7 @@ import {
   Cached as CachedIcon
 } from '@mui/icons-material';
 import { BalanceComparisonTable } from '../components/BalanceComparisonTable';
-import { useBalanceComparisons } from '../hooks/useBalanceComparisons';
+import { useBalanceComparisons, useRefreshBalances } from '../hooks/useBalanceComparisonsQuery';
 
 export const BalanceComparison: React.FC = () => {
   const navigate = useNavigate();
@@ -27,31 +27,25 @@ export const BalanceComparison: React.FC = () => {
   
   const {
     data: balanceData,
-    loading,
-    refreshing,
+    isLoading: loading,
+    isRefreshing: refreshing,
     error,
     refresh,
     forceRefresh,
-    isCacheExpired,
-    timeUntilExpiry,
-    lastFetchTime
+    isStale,
+    cacheAgeMinutes,
+    lastUpdated: lastFetchTime
   } = useBalanceComparisons({
-    enableAutoRefresh: autoRefreshEnabled,
-    autoRefreshInterval: 5 * 60 * 1000, // 5 minutes
-    cacheTimeout: 2 * 60 * 1000 // 2 minutes local cache
+    staleTime: autoRefreshEnabled ? 2 * 60 * 1000 : 5 * 60 * 1000, // 2 or 5 minutes
+    refetchInterval: autoRefreshEnabled ? 5 * 60 * 1000 : false // 5 minutes or disabled
   });
 
-  // Format cache expiry time
-  const formatCacheExpiry = (timeMs: number) => {
-    if (timeMs <= 0) return 'Expired';
-    
-    const minutes = Math.floor(timeMs / (1000 * 60));
-    const seconds = Math.floor((timeMs % (1000 * 60)) / 1000);
-    
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
+  // Format cache age
+  const formatCacheAge = (ageMinutes: number) => {
+    if (ageMinutes === 0) return 'Fresh';
+    if (ageMinutes < 60) return `${ageMinutes}m old`;
+    const hours = Math.floor(ageMinutes / 60);
+    return `${hours}h old`;
   };
 
   // Format last updated time
@@ -78,8 +72,8 @@ export const BalanceComparison: React.FC = () => {
   };
 
   // Calculate cache progress (for visual indicator)
-  const cacheProgress = balanceData && timeUntilExpiry > 0
-    ? ((timeUntilExpiry / (5 * 60 * 1000)) * 100) // Assuming 5min cache duration
+  const cacheProgress = cacheAgeMinutes > 0 && cacheAgeMinutes <= 5
+    ? ((5 - cacheAgeMinutes) / 5) * 100 // 5 minute cache duration
     : 0;
 
   return (
@@ -113,11 +107,11 @@ export const BalanceComparison: React.FC = () => {
                 variant="outlined"
                 size="small"
               />
-              <Tooltip title={`Cache expires in ${formatCacheExpiry(timeUntilExpiry)}`}>
+              <Tooltip title={`Data is ${formatCacheAge(cacheAgeMinutes)} - ${isStale ? 'Stale' : 'Fresh'}`}>
                 <Chip
                   icon={<InfoIcon />}
-                  label={`Cache: ${formatCacheExpiry(timeUntilExpiry)}`}
-                  color={isCacheExpired ? 'warning' : 'default'}
+                  label={`Cache: ${formatCacheAge(cacheAgeMinutes)}`}
+                  color={isStale ? 'warning' : 'success'}
                   variant="outlined"
                   size="small"
                 />

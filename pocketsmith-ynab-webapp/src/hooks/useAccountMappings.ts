@@ -1,23 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountsApi } from '../services/accountsApi';
+import { queryKeys, cacheInvalidation } from './queryKeys';
 import type {
   AccountsResponse,
   MappingsResponse,
   AccountMappingCreate
 } from '../types/accounts';
 
-// Query keys
-export const QUERY_KEYS = {
-  accounts: ['accounts'] as const,
-  mappings: ['mappings'] as const,
-};
-
 // Hook for fetching accounts from both APIs
 export const useAccounts = () => {
   return useQuery<AccountsResponse>({
-    queryKey: QUERY_KEYS.accounts,
+    queryKey: queryKeys.accountsData(),
     queryFn: accountsApi.fetchAccounts,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,
   });
 };
@@ -25,9 +21,10 @@ export const useAccounts = () => {
 // Hook for fetching current mappings
 export const useMappings = () => {
   return useQuery<MappingsResponse>({
-    queryKey: QUERY_KEYS.mappings,
+    queryKey: queryKeys.mappingsData(),
     queryFn: accountsApi.fetchMappings,
     staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });
 };
@@ -39,8 +36,8 @@ export const useSaveMappings = () => {
   return useMutation({
     mutationFn: (mappings: AccountMappingCreate[]) => accountsApi.saveMappings(mappings),
     onSuccess: () => {
-      // Invalidate and refetch mappings after successful save
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.mappings });
+      // Smart invalidation after mapping changes
+      cacheInvalidation.afterMappingChange(queryClient);
     },
   });
 };
@@ -52,7 +49,8 @@ export const useDeleteMapping = () => {
   return useMutation({
     mutationFn: (pocketsmithAccountId: string) => accountsApi.deleteMapping(pocketsmithAccountId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.mappings });
+      // Smart invalidation after mapping changes
+      cacheInvalidation.afterMappingChange(queryClient);
     },
   });
 };
@@ -72,7 +70,8 @@ export const useUpdateMappingConfig = () => {
     mutationFn: (config: { default_account_id?: string; strict_mode: boolean }) => 
       accountsApi.updateMappingConfig(config),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.mappings });
+      // Smart invalidation after mapping config changes
+      cacheInvalidation.afterMappingChange(queryClient);
     },
   });
 };
@@ -80,9 +79,10 @@ export const useUpdateMappingConfig = () => {
 // Hook for fetching YNAB budgets
 export const useYNABBudgets = () => {
   return useQuery({
-    queryKey: ['ynab-budgets'],
+    queryKey: queryKeys.ynabBudgets(),
     queryFn: accountsApi.fetchYNABBudgets,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes - budgets don't change often
     retry: 2,
   });
 };
@@ -94,10 +94,8 @@ export const useUpdateYNABBudgetId = () => {
   return useMutation({
     mutationFn: (budgetId: string) => accountsApi.updateYNABBudgetId(budgetId),
     onSuccess: () => {
-      // Invalidate accounts and mappings since budget change affects them
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.accounts });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.mappings });
-      queryClient.invalidateQueries({ queryKey: ['ynab-budgets'] });
+      // Smart invalidation after budget change
+      cacheInvalidation.afterBudgetChange(queryClient);
     },
   });
 };

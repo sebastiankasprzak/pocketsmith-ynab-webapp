@@ -181,6 +181,7 @@ function App() {
       }}
     >
       <QueryClientProvider client={queryClient}>
+        <ReactQueryDevtools initialIsOpen={false} />
         <ThemeProvider theme={appTheme}>
           <CssBaseline />
           <ToastProvider>
