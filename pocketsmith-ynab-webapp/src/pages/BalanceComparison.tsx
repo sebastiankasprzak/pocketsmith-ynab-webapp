@@ -91,7 +91,7 @@ export const BalanceComparison: React.FC = () => {
     }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
           Balance Comparison
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>

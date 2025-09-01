@@ -48,11 +48,22 @@ DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
 
 if [ -n "$DISTRIBUTION_ID" ]; then
   echo "🔄 Invalidating CloudFront cache: $DISTRIBUTION_ID"
-  aws cloudfront create-invalidation \
+  INVALIDATION_ID=$(aws cloudfront create-invalidation \
     --distribution-id $DISTRIBUTION_ID \
     --paths "/*" \
-    --region ap-southeast-2 > /dev/null
-  echo "✅ CloudFront invalidation created"
+    --region ap-southeast-2 \
+    --query 'Invalidation.Id' \
+    --output text)
+  
+  echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
+  echo "⏳ Waiting for invalidation to complete..."
+  
+  aws cloudfront wait invalidation-completed \
+    --distribution-id $DISTRIBUTION_ID \
+    --id $INVALIDATION_ID \
+    --region ap-southeast-2
+  
+  echo "✅ CloudFront invalidation completed"
 else
   echo "⚠️  Could not find CloudFront distribution ID"
 fi

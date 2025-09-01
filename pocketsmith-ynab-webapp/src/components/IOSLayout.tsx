@@ -88,67 +88,61 @@ export const IOSLayout = ({
   try {
     return (
       <Box 
-        className="ios-app-container ios-safe-area"
+        className="pwa-fullscreen-container"
         sx={{ 
           display: 'flex', 
-          flexDirection: 'column', 
-          minHeight: '100vh',
-          width: '100%'
+          flexDirection: 'column',
+          height: '100dvh',
+          width: '100%',
+          // Remove backgroundColor - let CSS handle it
         }}
       >
-        {/* iOS-style header */}
-        <Box className={`ios-header ${theme.palette.mode === 'dark' ? 'dark' : ''}`}>
-          <Box className="ios-safe-area-top">
-            <Box className="ios-nav-bar">
-              {showBackButton ? (
-                <button className="ios-nav-button" onClick={handleBackClick}>
-                  ← Back
-                </button>
-              ) : (
-                <Box sx={{ minWidth: 44 }} />
-              )}
-              
-              <Typography className="ios-nav-title" component="h1">
-                {title || 'PS-YNAB Sync'}
-              </Typography>
-              
-              <Box sx={{ minWidth: 44 }} />
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Content area */}
+        {/* Content area with proper safe area handling */}
         <Box 
-          className="ios-content ios-scroll-container ios-hide-scrollbar"
-          sx={{ flex: 1, overflow: 'auto' }}
+          className="pwa-content-area"
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            flex: 1,
+            backgroundColor: theme.palette.background.default,
+          }}
         >
-          <Box sx={{ p: 2 }}>
+          {/* Content area */}
+          <Box 
+            className="ios-content ios-scroll-container ios-hide-scrollbar"
+            sx={{ 
+              flex: 1, 
+              overflow: 'auto',
+              px: 2, // Horizontal padding only
+              pb: 2  // Bottom padding only
+            }}
+          >
             {children}
           </Box>
-        </Box>
 
-        {/* iOS-style tab bar */}
-        <Box className={`ios-tab-bar ios-safe-area-bottom ${theme.palette.mode === 'dark' ? 'dark' : ''}`}>
-          {tabRoutes.map((route) => (
-            <Box
-              key={route.path}
-              className={`ios-tab-item ${currentTab === route.path ? 'active' : ''}`}
-              onClick={() => navigate(route.path)}
-              component="button"
-              sx={{ 
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer'
-              }}
-            >
-              <Box className="ios-tab-icon">
-                {route.icon}
+          {/* iOS-style tab bar */}
+          <Box className={`ios-tab-bar ios-safe-area-bottom ${theme.palette.mode === 'dark' ? 'dark' : ''}`}>
+            {tabRoutes.map((route) => (
+              <Box
+                key={route.path}
+                className={`ios-tab-item ${currentTab === route.path ? 'active' : ''}`}
+                onClick={() => navigate(route.path)}
+                component="button"
+                sx={{ 
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer'
+                }}
+              >
+                <Box className="ios-tab-icon">
+                  {route.icon}
+                </Box>
+                <Typography variant="caption" component="span">
+                  {route.label}
+                </Typography>
               </Box>
-              <Typography variant="caption" component="span">
-                {route.label}
-              </Typography>
-            </Box>
-          ))}
+            ))}
+          </Box>
         </Box>
       </Box>
     );
@@ -157,9 +151,6 @@ export const IOSLayout = ({
     // Fallback to simple layout if there's an error
     return (
       <Box sx={{ p: 2, minHeight: '100vh' }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          {title || 'PS-YNAB Sync'}
-        </Typography>
         {children}
       </Box>
     );

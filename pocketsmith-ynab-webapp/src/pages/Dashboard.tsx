@@ -181,8 +181,8 @@ export const Dashboard: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
           Dashboard
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>

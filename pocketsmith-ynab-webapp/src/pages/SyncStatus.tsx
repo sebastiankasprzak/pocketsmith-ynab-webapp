@@ -137,8 +137,8 @@ export const SyncStatus: React.FC = () => {
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
           Sync Status Dashboard
         </Typography>
         <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>

@@ -468,8 +468,8 @@ export const AccountMappings: React.FC = () => {
       boxSizing: 'border-box'
     }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 600 }}>
           Account Mappings
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>

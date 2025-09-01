@@ -4,7 +4,11 @@
 
 html {
   width: 100%;
+  height: 100%;
   overflow-x: hidden;
+  /* PWA fullscreen support */
+  margin: 0;
+  padding: 0;
 }
 
 :root {
@@ -35,7 +39,7 @@ body {
   margin: 0;
   padding: 0;
   min-width: 320px;
-  min-height: 100vh;
+  height: 100%;
   width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -44,6 +48,8 @@ body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* PWA fullscreen support */
+  background-color: #1976d2; /* Status bar area color */
 }
 
 /* iOS device-specific styles */
@@ -51,15 +57,20 @@ body.ios-device {
   /* Prevent bounce scrolling on iOS */
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   overflow-x: hidden;
+  /* PWA fullscreen background for status bar area */
+  background-color: #1976d2;
 }
 
 body.ios-device #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  /* Root container styling for PWA */
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
@@ -96,5 +107,50 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+/* PWA Fullscreen Support */
+@media (display-mode: standalone) {
+  html, body {
+    height: 100vh;
+    height: 100dvh;
+    background-color: #1976d2; /* Match theme color for status bar area */
+  }
+  
+  #root {
+    height: 100vh;
+    height: 100dvh;
+    background-color: #ffffff; /* App content background */
+  }
+  
+  /* Dark mode support for PWA */
+  @media (prefers-color-scheme: dark) {
+    html, body {
+      background-color: #0d47a1; /* Dark theme color for status bar */
+    }
+    
+    #root {
+      background-color: #121212; /* Dark app content background */
+    }
+  }
+}
+
+/* Prevent overscroll bounce on iOS PWA */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+}
+
+/* Dynamic Island and notch support */
+@supports (padding: max(0px)) {
+  @media (display-mode: standalone) {
+    #root {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 }

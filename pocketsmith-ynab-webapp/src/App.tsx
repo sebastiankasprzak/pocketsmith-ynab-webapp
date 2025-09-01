@@ -186,7 +186,15 @@ function App() {
                         <SkipLinks />
                         <PWAUpdatePrompt />
                         <PWAInstallPrompt />
-                        <Box sx={{ flexGrow: 1, minHeight: '100vh' }}>
+                        <Box 
+                          sx={{ 
+                            flexGrow: 1, 
+                            height: '100dvh',
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                        >
                           <ProtectedRoute>
                             <AppContent />
                           </ProtectedRoute>
