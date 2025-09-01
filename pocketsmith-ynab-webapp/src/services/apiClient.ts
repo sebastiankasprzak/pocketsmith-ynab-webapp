@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError, type AxiosResponse } from 'axios';
+import axios, { AxiosError, type AxiosResponse, type AxiosInstance } from 'axios';
 import { authService } from './authService';
 
 // Base API configuration

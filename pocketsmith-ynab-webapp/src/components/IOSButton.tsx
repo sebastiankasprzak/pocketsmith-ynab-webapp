@@ -1,10 +1,13 @@
 import React, { ReactNode } from 'react';
-import { Button, ButtonProps, useTheme } from '@mui/material';
+import { Button, useTheme } from '@mui/material';
+import type { ButtonProps } from '@mui/material';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSButtonProps extends Omit<ButtonProps, 'variant'> {
   children: ReactNode;
   variant?: 'primary' | 'secondary' | 'destructive' | 'plain';
   fullWidth?: boolean;
+  hapticFeedback?: boolean;
 }
 
 export const IOSButton = ({
@@ -12,9 +15,19 @@ export const IOSButton = ({
   variant = 'primary',
   fullWidth = false,
   className = '',
+  hapticFeedback = true,
+  onClick,
   ...props
 }) => {
   const theme = useTheme();
+  const { impact } = useHapticFeedback();
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (hapticFeedback) {
+      impact(variant === 'destructive' ? 'medium' : 'light');
+    }
+    onClick?.(event);
+  };
 
   const getButtonStyles = () => {
     const baseStyles = {
@@ -77,6 +90,7 @@ export const IOSButton = ({
       className={`ios-button ${className}`}
       sx={getButtonStyles()}
       fullWidth={fullWidth}
+      onClick={handleClick}
       {...props}
     >
       {children}

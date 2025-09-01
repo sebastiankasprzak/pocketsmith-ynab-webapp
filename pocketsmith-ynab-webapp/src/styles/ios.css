@@ -6,11 +6,14 @@
   --safe-area-inset-right: env(safe-area-inset-right);
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
   --safe-area-inset-left: env(safe-area-inset-left);
-  
-  /* iOS-specific spacing */
+
+  /* iOS-specific spacing - Updated for better sizing */
   --ios-header-height: 44px;
-  --ios-tab-bar-height: 49px;
+  --ios-tab-bar-height: 55px;
+  /* Increased from 49px to accommodate icons and labels properly */
   --ios-status-bar-height: 20px;
+  --ios-tab-icon-size: 28px;
+  --ios-tab-label-height: 12px;
 }
 
 /* iOS device detection and safe area application */
@@ -21,11 +24,11 @@
     padding-bottom: max(var(--safe-area-inset-bottom), 0px);
     padding-left: max(var(--safe-area-inset-left), 0px);
   }
-  
+
   .ios-safe-area-top {
     padding-top: max(var(--safe-area-inset-top), 0px);
   }
-  
+
   .ios-safe-area-bottom {
     padding-bottom: max(var(--safe-area-inset-bottom), 0px);
   }
@@ -34,7 +37,8 @@
 /* iOS-style app container */
 .ios-app-container {
   min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height for iOS */
+  min-height: 100dvh;
+  /* Dynamic viewport height for iOS */
   display: flex;
   flex-direction: column;
   position: relative;
@@ -100,14 +104,115 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--ios-tab-bar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
   background: rgba(248, 248, 248, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 0.5px solid rgba(0, 0, 0, 0.1);
-  display: flex;
+  min-height: calc(var(--ios-tab-bar-height) + var(--safe-area-inset-bottom));
+  padding-bottom: var(--safe-area-inset-bottom);
   z-index: 1000;
 }
+
+.ios-tab-bar.dark {
+  background: rgba(28, 28, 30, 0.8);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* iOS tab bar items */
+.ios-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  min-height: 83px;
+  /* Updated to match new tab bar height */
+  padding: 8px 4px 4px 4px;
+  /* More padding at top for better spacing */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+  flex: 1;
+  max-width: 100px;
+  /* Slightly wider for better touch targets */
+}
+
+.ios-tab-item:active {
+  opacity: 0.3;
+  transform: scale(0.95);
+}
+
+/* iOS tab bar icons */
+.ios-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ios-tab-icon-size);
+  height: var(--ios-tab-icon-size);
+  margin-bottom: 4px;
+  /* Increased spacing between icon and label */
+  color: #8E8E93;
+  transition: color 0.2s ease;
+}
+
+.ios-tab-item.active .ios-tab-icon {
+  color: #007AFF;
+}
+
+.ios-tab-icon svg {
+  width: 26px;
+  /* Slightly larger icons for better visibility */
+  height: 26px;
+}
+
+/* iOS tab bar labels */
+.ios-tab-item span {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 12px;
+  color: #8E8E93;
+  transition: color 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ios-tab-item.active span {
+  color: #007AFF;
+}
+
+/* iOS content area */
+.ios-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--ios-tab-bar-height) + var(--safe-area-inset-bottom) + 16px);
+}
+
+/* iOS scroll container */
+.ios-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbars on iOS for cleaner look */
+.ios-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.ios-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Duplicate tab bar styles removed - already defined above */
 
 .ios-tab-bar.dark {
   background: rgba(28, 28, 30, 0.8);
@@ -150,7 +255,8 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: calc(var(--ios-tab-bar-height) + var(--safe-area-inset-bottom));
-  min-height: 0; /* Important for flex child */
+  min-height: 0;
+  /* Important for flex child */
 }
 
 /* iOS-style list items */
@@ -243,6 +349,7 @@
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -252,6 +359,7 @@
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-100%);
   }
@@ -267,6 +375,7 @@
 
 /* Prevent zoom on input focus (iOS Safari) */
 @media screen and (max-width: 767px) {
+
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -309,4 +418,506 @@
 
 .ios-pull-to-refresh.active {
   transform: translateX(-50%) translateY(60px);
+}
+
+/* Phas
+e 2: Advanced iOS Animations and Effects */
+
+/* iOS Context Menu Animations */
+@keyframes contextMenuScale {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ios-context-menu {
+  animation: contextMenuScale 0.2s ease-out;
+}
+
+/* iOS Bottom Sheet Animations */
+@keyframes sheetSlideUp {
+  0% {
+    transform: translateY(100%);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetSlideDown {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.ios-bottom-sheet {
+  animation: sheetSlideUp 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ios-bottom-sheet.closing {
+  animation: sheetSlideDown 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* iOS Search Bar Enhancements */
+.ios-search-bar {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ios-search-bar:focus-within {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+/* iOS Segmented Control Enhancements */
+.ios-segmented-control {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.ios-segmented-option {
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ios-segmented-option.selected {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* iOS Toggle Switch Enhancements */
+.ios-toggle {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ios-toggle-thumb {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+/* iOS Loading Animations */
+@keyframes iosSpinner {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.ios-spinner {
+  animation: iosSpinner 1s linear infinite;
+}
+
+@keyframes iosPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 currentColor;
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px transparent;
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.ios-pulsing-dot {
+  animation: iosPulse 2s ease-in-out infinite;
+}
+
+@keyframes iosSkeletonPulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.ios-skeleton {
+  animation: iosSkeletonPulse 1.5s ease-in-out 0.5s infinite;
+}
+
+@keyframes iosSkeletonWave {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.ios-skeleton-wave::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: iosSkeletonWave 1.6s ease-in-out 0.5s infinite;
+}
+
+/* iOS Notification Animations */
+@keyframes notificationSlideInDown {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes notificationSlideOutUp {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.ios-notification {
+  animation: notificationSlideInDown 0.3s ease-out;
+}
+
+.ios-notification.closing {
+  animation: notificationSlideOutUp 0.2s ease-in;
+}
+
+/* Enhanced iOS Haptic Feedback Visual Cues */
+.ios-haptic-light {
+  animation: hapticLight 0.1s ease-out;
+}
+
+.ios-haptic-medium {
+  animation: hapticMedium 0.15s ease-out;
+}
+
+.ios-haptic-heavy {
+  animation: hapticHeavy 0.2s ease-out;
+}
+
+@keyframes hapticLight {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.98);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes hapticMedium {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.96);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes hapticHeavy {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.94);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* iOS Progress Bar Enhancements */
+.ios-progress-bar {
+  overflow: hidden;
+  position: relative;
+}
+
+.ios-progress-fill {
+  background: linear-gradient(90deg, #007AFF 0%, #5AC8FA 100%);
+  transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ios-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-image: linear-gradient(-45deg,
+      rgba(255, 255, 255, 0.2) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.2) 75%,
+      transparent 75%,
+      transparent);
+  background-size: 50px 50px;
+  animation: progressStripes 1s linear infinite;
+}
+
+@keyframes progressStripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 50px 50px;
+  }
+}
+
+/* iOS Card Hover Effects */
+.ios-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.ios-card:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
+}
+
+/* iOS Button Press Effects */
+.ios-button:active {
+  transform: scale(0.96);
+  transition-duration: 0.1s;
+}
+
+/* iOS Swipe Gesture Visual Feedback */
+.ios-swipe-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ios-swipe-indicator.visible {
+  opacity: 1;
+}
+
+.ios-swipe-left .ios-swipe-indicator {
+  right: 16px;
+}
+
+.ios-swipe-right .ios-swipe-indicator {
+  left: 16px;
+}
+
+/* iOS Pull-to-Refresh Enhancements */
+.ios-pull-to-refresh {
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ios-pull-indicator {
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.ios-pull-indicator.pulling {
+  transform: rotate(180deg);
+}
+
+/* iOS Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+  .ios-card {
+    background-color: rgba(28, 28, 30, 0.95);
+    border: 1px solid rgba(84, 84, 88, 0.3);
+  }
+
+  .ios-button.primary {
+    background: linear-gradient(135deg, #0A84FF 0%, #64D2FF 100%);
+  }
+
+  .ios-segmented-control {
+    background-color: rgba(84, 84, 88, 0.16);
+  }
+
+  .ios-search-bar {
+    background-color: rgba(84, 84, 88, 0.16);
+  }
+
+  .ios-notification {
+    background-color: rgba(28, 28, 30, 0.95);
+    border: 1px solid rgba(84, 84, 88, 0.3);
+  }
+}
+
+/* iOS Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+
+  .ios-card,
+  .ios-button,
+  .ios-toggle,
+  .ios-segmented-option,
+  .ios-notification {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* iOS Focus Indicators for Accessibility */
+.ios-button:focus-visible,
+.ios-toggle:focus-visible,
+.ios-segmented-option:focus-visible {
+  outline: 2px solid #007AFF;
+  outline-offset: 2px;
+}
+
+/* iOS High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .ios-card {
+    border: 2px solid currentColor;
+  }
+
+  .ios-button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* iO
+S device-specific adjustments */
+
+/* iPhone SE and smaller devices */
+@media screen and (max-width: 375px) {
+  .ios-tab-item {
+    min-width: 50px;
+    padding: 6px 2px 4px 2px;
+  }
+
+  .ios-tab-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .ios-tab-item span {
+    font-size: 9px;
+  }
+}
+
+/* iPhone Pro Max and larger devices */
+@media screen and (min-width: 428px) {
+  .ios-tab-item {
+    min-width: 80px;
+    padding: 10px 6px 6px 6px;
+  }
+
+  .ios-tab-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .ios-tab-item span {
+    font-size: 11px;
+  }
+}
+
+/* iPad adjustments */
+@media screen and (min-width: 768px) {
+  :root {
+    --ios-tab-bar-height: 65px;
+    /* Smaller on iPad */
+  }
+
+  .ios-tab-item {
+    min-height: 65px;
+    min-width: 100px;
+    max-width: 120px;
+    padding: 8px 8px 6px 8px;
+  }
+
+  .ios-tab-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ios-tab-item span {
+    font-size: 12px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --ios-tab-bar-height: 65px;
+    /* Smaller in landscape */
+  }
+
+  .ios-tab-item {
+    min-height: 65px;
+    padding: 6px 4px 4px 4px;
+  }
+
+  .ios-tab-icon {
+    margin-bottom: 2px;
+  }
+
+  .ios-tab-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .ios-tab-item span {
+    font-size: 9px;
+  }
+}
+
+/* PWA standalone mode adjustments */
+@media (display-mode: standalone) {
+  .ios-tab-bar {
+    /* Ensure proper safe area handling in PWA mode */
+    padding-bottom: max(var(--safe-area-inset-bottom), 8px);
+  }
+}
+
+/* High DPI display adjustments */
+@media (-webkit-min-device-pixel-ratio: 3) {
+  .ios-tab-bar {
+    border-top-width: 0.33px;
+    /* Thinner border on high DPI displays */
+  }
 }

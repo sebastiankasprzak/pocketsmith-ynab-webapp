@@ -15,9 +15,11 @@ import {
   Dashboard as DashboardIcon,
   AccountBalance as AccountsIcon,
   Sync as SyncIcon,
-  Settings as SettingsIcon,
+  Balance as BalanceIcon,
   ArrowBack as BackIcon
 } from '@mui/icons-material';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSLayoutProps {
   children: ReactNode;
@@ -36,7 +38,7 @@ const tabRoutes: TabRoute[] = [
   { path: '/', label: 'Dashboard', icon: <DashboardIcon /> },
   { path: '/accounts', label: 'Accounts', icon: <AccountsIcon /> },
   { path: '/sync', label: 'Sync', icon: <SyncIcon /> },
-  { path: '/settings', label: 'Settings', icon: <SettingsIcon /> },
+  { path: '/settings', label: 'Balance', icon: <BalanceIcon /> },
 ];
 
 export const IOSLayout = ({
