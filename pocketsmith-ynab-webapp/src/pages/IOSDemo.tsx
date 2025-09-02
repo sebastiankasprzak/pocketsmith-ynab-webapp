@@ -9,7 +9,6 @@ import {
 import { IOSCard } from '../components/IOSCard';
 import { IOSButton } from '../components/IOSButton';
 import { IOSLayout } from '../components/IOSLayout';
-import { IOSDebug } from '../components/IOSDebug';
 import { IOSContextMenu } from '../components/IOSContextMenu';
 import { IOSBottomSheet } from '../components/IOSBottomSheet';
 import { IOSSearchBar } from '../components/IOSSearchBar';
@@ -23,6 +22,7 @@ import {
   IOSProgressBar, 
   IOSPulsingDot 
 } from '../components/IOSLoadingStates';
+import { IOSDetectionDemo } from '../components/IOSDetectionDemo';
 
 export const IOSDemo = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -72,7 +72,8 @@ export const IOSDemo = () => {
       <Box sx={{ pb: 2 }}>
         <NotificationContainer />
         
-        <IOSDebug />
+        {/* Enhanced iOS Detection Demo */}
+        <IOSDetectionDemo />
         
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
           Phase 2: Advanced iOS Components

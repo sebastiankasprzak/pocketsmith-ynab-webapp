@@ -1,10 +1,9 @@
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { type ReactNode, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Typography, 
-  useTheme,
-  useMediaQuery
+  useTheme
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -12,9 +11,11 @@ import {
   Sync as SyncIcon,
   Balance as BalanceIcon,
 } from '@mui/icons-material';
+import { useIOSDetection } from '../hooks/useIOSDetection';
 
 interface IOSLayoutProps {
   children: ReactNode;
+  title?: string;
 }
 
 interface TabRoute {
@@ -30,26 +31,55 @@ const tabRoutes: TabRoute[] = [
   { path: '/settings', label: 'Balance', icon: <BalanceIcon /> },
 ];
 
-export const IOSLayout = ({ children }: IOSLayoutProps) => {
+export const IOSLayout = ({ children, title }: IOSLayoutProps) => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isIOS, setIsIOS] = useState(false);
+  const { capabilities, shouldUseIOSExperience, deviceClass } = useIOSDetection();
 
   useEffect(() => {
-    // Detect iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(iOS);
-    
-    // Add iOS class to body for global styling
-    if (iOS) {
+    // Add iOS-specific classes to body for global styling
+    if (capabilities.isIOS) {
       document.body.classList.add('ios-device');
+      
+      if (capabilities.isIPad) {
+        document.body.classList.add('ios-ipad');
+      }
+      
+      if (capabilities.hasNotch) {
+        document.body.classList.add('ios-notch');
+      }
+      
+      if (capabilities.hasDynamicIsland) {
+        document.body.classList.add('ios-dynamic-island');
+      }
+      
+      if (capabilities.supportsHaptics) {
+        document.body.classList.add('ios-haptics');
+      }
+      
+      if (capabilities.supportsStandalone) {
+        document.body.classList.add('ios-standalone');
+      }
+      
+      document.body.classList.add(`ios-version-${capabilities.version}`);
+      document.body.classList.add(`device-${deviceClass}`);
     }
     
     return () => {
-      document.body.classList.remove('ios-device');
+      // Clean up all iOS-related classes
+      document.body.classList.remove(
+        'ios-device',
+        'ios-ipad',
+        'ios-notch',
+        'ios-dynamic-island',
+        'ios-haptics',
+        'ios-standalone',
+        `ios-version-${capabilities.version}`,
+        `device-${deviceClass}`
+      );
     };
-  }, []);
+  }, [capabilities, deviceClass]);
 
 
 
@@ -149,20 +179,15 @@ export const IOSLayout = ({ children }: IOSLayoutProps) => {
   }
 };
 
-// Hook for detecting iOS and providing iOS-specific utilities
-export const useIOSDetection = () => {
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const standalone = window.matchMedia('(display-mode: standalone)').matches;
-    
-    setIsIOS(iOS);
-    setIsStandalone(standalone);
-  }, []);
-
-  return { isIOS, isStandalone };
+// Legacy hook - kept for backward compatibility
+// Use the enhanced useIOSDetection from hooks/useIOSDetection.ts instead
+export const useIOSDetectionLegacy = () => {
+  const { capabilities } = useIOSDetection();
+  
+  return { 
+    isIOS: capabilities.isIOS, 
+    isStandalone: capabilities.supportsStandalone 
+  };
 };
 
 export default IOSLayout;

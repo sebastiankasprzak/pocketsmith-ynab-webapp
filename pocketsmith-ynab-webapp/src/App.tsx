@@ -1,14 +1,13 @@
 import React, { Suspense, lazy } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
-import { useMediaQuery } from '@mui/material';
+
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, CircularProgress } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { theme } from './theme';
-import { useIOSTheme } from './hooks/useIOSTheme';
-import { useIOSDetection } from './components/IOSLayout';
+import { useStableIOSTheme } from './hooks/useStableIOSTheme';
+import { useIOSDetection } from './hooks/useIOSDetection';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthErrorHandler } from './components/AuthErrorHandler';
@@ -30,8 +29,7 @@ const AccountMappings = lazy(() => import('./pages/AccountMappings').then(module
 const SyncStatus = lazy(() => import('./pages/SyncStatus').then(module => ({ default: module.SyncStatus })));
 const BalanceComparison = lazy(() => import('./pages/BalanceComparison').then(module => ({ default: module.BalanceComparison })));
 const IOSDemo = lazy(() => import('./pages/IOSDemo').then(module => ({ default: module.IOSDemo })));
-const SimpleIOSTest = lazy(() => import('./components/SimpleIOSTest').then(module => ({ default: module.SimpleIOSTest })));
-const ScrollTest = lazy(() => import('./pages/ScrollTest').then(module => ({ default: module.ScrollTest })));
+
 
 // Loading component for Suspense fallback
 const PageLoadingFallback = () => (
@@ -78,11 +76,10 @@ const AuthErrorHandlerWrapper = ({ children }: { children: React.ReactNode }) =>
 
 // Main app content component
 const AppContent = () => {
-  const isMobile = useMediaQuery('(max-width:768px)');
+  const { shouldUseIOSExperience, deviceClass } = useIOSDetection();
   
-  // Simple iOS detection without external hook
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const shouldUseIOSLayout = isIOS && isMobile;
+  // Use iOS layout when iOS experience is enabled and on mobile devices
+  const shouldUseIOSLayout = shouldUseIOSExperience && (deviceClass === 'phone' || deviceClass === 'tablet');
 
   if (shouldUseIOSLayout) {
     return (
@@ -104,8 +101,7 @@ const AppContent = () => {
               <Route path="/sync" element={<SyncStatus />} />
               <Route path="/settings" element={<BalanceComparison />} />
               <Route path="/ios-demo" element={<IOSDemo />} />
-              <Route path="/ios-test" element={<SimpleIOSTest />} />
-              <Route path="/scroll-test" element={<ScrollTest />} />
+
               {/* Legacy routes for compatibility */}
               <Route path="/account-mappings" element={<AccountMappings />} />
               <Route path="/sync-status" element={<SyncStatus />} />
@@ -146,8 +142,7 @@ const AppContent = () => {
                 <Route path="/sync" element={<SyncStatus />} />
                 <Route path="/settings" element={<BalanceComparison />} />
                 <Route path="/ios-demo" element={<IOSDemo />} />
-                <Route path="/ios-test" element={<SimpleIOSTest />} />
-                <Route path="/scroll-test" element={<ScrollTest />} />
+
                 {/* Legacy routes for compatibility */}
                 <Route path="/account-mappings" element={<AccountMappings />} />
                 <Route path="/sync-status" element={<SyncStatus />} />
@@ -164,14 +159,8 @@ const AppContent = () => {
 };
 
 function App() {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  const isMobile = useMediaQuery('(max-width:768px)');
-  
-  // Simple iOS detection
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  
-  // Use iOS theme on iOS devices, fallback to default theme
-  const appTheme = (isIOS && isMobile) ? useIOSTheme(prefersDarkMode) : theme;
+  // Use the stable iOS theme hook that prevents render loops
+  const appTheme = useStableIOSTheme();
 
   return (
     <ErrorBoundary 
