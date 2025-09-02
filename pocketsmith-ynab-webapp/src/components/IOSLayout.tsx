@@ -2,12 +2,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Box, 
-  AppBar, 
-  Toolbar, 
   Typography, 
-  IconButton,
-  BottomNavigation,
-  BottomNavigationAction,
   useTheme,
   useMediaQuery
 } from '@mui/material';
@@ -16,16 +11,10 @@ import {
   AccountBalance as AccountsIcon,
   Sync as SyncIcon,
   Balance as BalanceIcon,
-  ArrowBack as BackIcon
 } from '@mui/icons-material';
-import { useSwipeGestures } from '../hooks/useSwipeGestures';
-import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSLayoutProps {
   children: ReactNode;
-  title?: string;
-  showBackButton?: boolean;
-  onBackClick?: () => void;
 }
 
 interface TabRoute {
@@ -41,16 +30,10 @@ const tabRoutes: TabRoute[] = [
   { path: '/settings', label: 'Balance', icon: <BalanceIcon /> },
 ];
 
-export const IOSLayout = ({
-  children,
-  title,
-  showBackButton = false,
-  onBackClick
-}) => {
+export const IOSLayout = ({ children }: IOSLayoutProps) => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
@@ -68,19 +51,28 @@ export const IOSLayout = ({
     };
   }, []);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
-    navigate(newValue);
+
+
+  // Map legacy paths to iOS tab paths for proper tab highlighting
+  const pathMapping: Record<string, string> = {
+    '/account-mappings': '/accounts',
+    '/sync-status': '/sync',
+    '/balance-comparison': '/settings',
   };
 
-  const handleBackClick = () => {
-    if (onBackClick) {
-      onBackClick();
-    } else {
-      navigate(-1);
+  const getCurrentTab = () => {
+    const currentPath = location.pathname;
+    // Check if current path is a legacy path and map it to iOS tab path
+    const mappedPath = pathMapping[currentPath];
+    if (mappedPath) {
+      return mappedPath;
     }
+    // Check if current path matches any tab route directly
+    const directMatch = tabRoutes.find(route => route.path === currentPath);
+    return directMatch?.path || '/';
   };
 
-  const currentTab = tabRoutes.find(route => route.path === location.pathname)?.path || '/';
+  const currentTab = getCurrentTab();
 
   // Always render iOS layout when this component is used
   // The parent component (App.tsx) already handles the iOS detection logic
