@@ -232,7 +232,7 @@ export const BalanceComparisonTable: React.FC<BalanceComparisonTableProps> = ({
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="body2" color="text.secondary">YNAB:</Typography>
+            <Typography variant="body2" color="text.secondary">YNAB Cleared:</Typography>
             <Typography variant="body2" fontWeight="medium">
               {formatCurrency(comparison.ynabBalance, comparison.currency)}
             </Typography>
@@ -370,7 +370,7 @@ export const BalanceComparisonTable: React.FC<BalanceComparisonTableProps> = ({
               role="region"
               aria-label="Balance comparison table"
             >
-              <Table aria-label="Balance comparisons between PocketSmith and YNAB accounts">
+              <Table aria-label="Balance comparisons between PocketSmith posted balances and YNAB cleared balances">
                 <TableHead>
                   <TableRow>
                     <TableCell>
@@ -384,24 +384,28 @@ export const BalanceComparisonTable: React.FC<BalanceComparisonTableProps> = ({
                       </TableSortLabel>
                     </TableCell>
                     <TableCell align="right">
-                      <TableSortLabel
-                        active={sortField === 'pocketsmithBalance'}
-                        direction={sortField === 'pocketsmithBalance' ? sortDirection : 'asc'}
-                        onClick={() => handleSort('pocketsmithBalance')}
-                        aria-label={`Sort by PocketSmith balance ${sortField === 'pocketsmithBalance' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
-                      >
-                        PocketSmith Balance
-                      </TableSortLabel>
+                      <Tooltip title="PocketSmith posted balance includes only cleared/posted transactions">
+                        <TableSortLabel
+                          active={sortField === 'pocketsmithBalance'}
+                          direction={sortField === 'pocketsmithBalance' ? sortDirection : 'asc'}
+                          onClick={() => handleSort('pocketsmithBalance')}
+                          aria-label={`Sort by PocketSmith balance ${sortField === 'pocketsmithBalance' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
+                        >
+                          PocketSmith Balance
+                        </TableSortLabel>
+                      </Tooltip>
                     </TableCell>
                     <TableCell align="right">
-                      <TableSortLabel
-                        active={sortField === 'ynabBalance'}
-                        direction={sortField === 'ynabBalance' ? sortDirection : 'asc'}
-                        onClick={() => handleSort('ynabBalance')}
-                        aria-label={`Sort by YNAB balance ${sortField === 'ynabBalance' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
-                      >
-                        YNAB Balance
-                      </TableSortLabel>
+                      <Tooltip title="YNAB cleared balance excludes uncleared transactions, matching PocketSmith's posted balance approach">
+                        <TableSortLabel
+                          active={sortField === 'ynabBalance'}
+                          direction={sortField === 'ynabBalance' ? sortDirection : 'asc'}
+                          onClick={() => handleSort('ynabBalance')}
+                          aria-label={`Sort by YNAB cleared balance ${sortField === 'ynabBalance' ? (sortDirection === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
+                        >
+                          YNAB Cleared Balance
+                        </TableSortLabel>
+                      </Tooltip>
                     </TableCell>
                     <TableCell align="right">
                       <TableSortLabel

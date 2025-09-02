@@ -312,8 +312,8 @@ export const mockApi = {
       const ynabAccount = mockYnabAccounts.find(a => a.id === mapping.ynabAccountId);
       
       if (psAccount && ynabAccount) {
-        const ynabBalanceInDollars = ynabAccount.balance / 1000; // YNAB stores in milliunits
-        const difference = psAccount.current_balance - ynabBalanceInDollars;
+        const ynabClearedBalanceInDollars = ynabAccount.cleared_balance / 1000; // YNAB stores in milliunits
+        const difference = psAccount.current_balance - ynabClearedBalanceInDollars;
         
         comparisons.push({
           pocketsmithAccountId: psAccount.id.toString(),
@@ -322,7 +322,7 @@ export const mockApi = {
           pocketsmithBalanceDate: psAccount.current_balance_date,
           ynabAccountId: ynabAccount.id,
           ynabAccountName: ynabAccount.name,
-          ynabBalance: ynabBalanceInDollars,
+          ynabBalance: ynabClearedBalanceInDollars, // Use cleared balance for comparison
           ynabClearedBalance: ynabAccount.cleared_balance / 1000,
           difference: difference,
           currency: psAccount.currency_code,
@@ -340,8 +340,8 @@ export const mockApi = {
       const ynabCredit = mockYnabAccounts.find(a => a.id === "ynab-2");
       
       if (psCredit && ynabCredit) {
-        const ynabBalanceInDollars = ynabCredit.balance / 1000;
-        const difference = psCredit.current_balance - ynabBalanceInDollars;
+        const ynabClearedBalanceInDollars = ynabCredit.cleared_balance / 1000;
+        const difference = psCredit.current_balance - ynabClearedBalanceInDollars;
         
         comparisons.push({
           pocketsmithAccountId: psCredit.id.toString(),
@@ -350,7 +350,7 @@ export const mockApi = {
           pocketsmithBalanceDate: psCredit.current_balance_date,
           ynabAccountId: ynabCredit.id,
           ynabAccountName: ynabCredit.name,
-          ynabBalance: ynabBalanceInDollars,
+          ynabBalance: ynabClearedBalanceInDollars, // Use cleared balance for comparison
           ynabClearedBalance: ynabCredit.cleared_balance / 1000,
           difference: difference,
           currency: psCredit.currency_code,
@@ -365,8 +365,8 @@ export const mockApi = {
       const ynabSavings = mockYnabAccounts.find(a => a.id === "ynab-3");
       
       if (psSavings && ynabSavings) {
-        const ynabBalanceInDollars = ynabSavings.balance / 1000;
-        const difference = psSavings.current_balance - ynabBalanceInDollars;
+        const ynabClearedBalanceInDollars = ynabSavings.cleared_balance / 1000;
+        const difference = psSavings.current_balance - ynabClearedBalanceInDollars;
         
         comparisons.push({
           pocketsmithAccountId: psSavings.id.toString(),
@@ -375,7 +375,7 @@ export const mockApi = {
           pocketsmithBalanceDate: psSavings.current_balance_date,
           ynabAccountId: ynabSavings.id,
           ynabAccountName: ynabSavings.name,
-          ynabBalance: ynabBalanceInDollars,
+          ynabBalance: ynabClearedBalanceInDollars, // Use cleared balance for comparison
           ynabClearedBalance: ynabSavings.cleared_balance / 1000,
           difference: difference,
           currency: psSavings.currency_code,

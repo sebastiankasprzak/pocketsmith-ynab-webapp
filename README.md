@@ -14,7 +14,7 @@ A React web application that provides a management interface for the existing Po
 
 - **Account Management**: Configure account mappings between PocketSmith and YNAB
 - **Sync Monitoring**: Monitor synchronization status and history
-- **Balance Comparison**: Compare account balances between systems
+- **Balance Comparison**: Compare PocketSmith posted balances with YNAB cleared balances
 - **Manual Sync**: Trigger synchronization operations manually
 - **User Authentication**: Secure access with AWS Cognito OAuth integration
 - **Responsive Design**: Works on desktop, tablet, and mobile devices

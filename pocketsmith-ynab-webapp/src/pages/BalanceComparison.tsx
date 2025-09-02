@@ -89,7 +89,7 @@ export const BalanceComparison: React.FC = () => {
           Balance Comparison
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          Compare account balances between PocketSmith and YNAB to identify discrepancies.
+          Compare PocketSmith posted balances with YNAB cleared balances to identify discrepancies.
         </Typography>
 
         {/* Status and Actions */}

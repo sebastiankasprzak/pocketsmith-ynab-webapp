@@ -54,7 +54,7 @@ function createBalanceComparison(
 ): BalanceComparison {
   const ynabBalance = convertYNABBalanceToDecimal(ynabAccount.balance);
   const ynabClearedBalance = convertYNABBalanceToDecimal(ynabAccount.cleared_balance);
-  const difference = Math.abs(psAccount.current_balance - ynabBalance);
+  const difference = Math.abs(psAccount.current_balance - ynabClearedBalance);
   
   // Handle both possible PocketSmith account name fields (prioritize title as it's the correct field)
   const accountName = psAccount.title || psAccount.name || `Account ${psAccount.id}`;
@@ -66,7 +66,7 @@ function createBalanceComparison(
     pocketsmithBalanceDate: psAccount.current_balance_date,
     ynabAccountId: ynabAccount.id,
     ynabAccountName: ynabAccount.name,
-    ynabBalance,
+    ynabBalance: ynabClearedBalance, // Use cleared balance for comparison
     ynabClearedBalance,
     difference,
     currency: psAccount.currency_code,
