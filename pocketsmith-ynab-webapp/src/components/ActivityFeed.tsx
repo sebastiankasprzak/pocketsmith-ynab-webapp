@@ -27,6 +27,7 @@ interface ActivityFeedProps {
   isLoading?: boolean;
   onRefresh?: () => void;
   maxHeight?: number;
+  height?: number;
   title?: string;
 }
 
@@ -35,6 +36,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   isLoading = false,
   onRefresh,
   maxHeight = 350,
+  height,
   title = 'Recent Activity'
 }) => {
   const formatTimeAgo = (date: Date) => {
@@ -55,9 +57,16 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
     }
   };
 
+  const containerHeight = height || 400;
+  const contentHeight = containerHeight - 64; // Subtract header height
+
   return (
-    <Paper sx={{ height: '100%', minHeight: 400 }}>
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+    <Paper sx={{ 
+      height: containerHeight,
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6">{title}</Typography>
           {onRefresh && (
@@ -68,7 +77,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
         </Box>
       </Box>
       
-      <Box sx={{ maxHeight, overflow: 'auto' }}>
+      <Box sx={{ 
+        height: contentHeight,
+        overflow: 'auto',
+        flexGrow: 1
+      }}>
         {isLoading ? (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <CircularProgress size={24} />

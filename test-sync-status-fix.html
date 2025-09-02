@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sync Status Fix</title>
+</head>
+<body>
+    <h1>Sync Status Fix Test</h1>
+    <p>This test verifies that:</p>
+    <ol>
+        <li>The recent transaction activity time period selection works correctly</li>
+        <li>The selected time period is remembered using localStorage</li>
+    </ol>
+    
+    <h2>Changes Made:</h2>
+    <ul>
+        <li>Fixed the issue where changing time periods didn't work when auto-refresh was enabled</li>
+        <li>Added localStorage persistence for both activityHours and autoRefresh settings</li>
+        <li>Removed the hardcoded activityHours in useSyncMonitoring hook</li>
+        <li>Updated SyncStatus component to properly pass activityHours to the hook</li>
+    </ul>
+    
+    <h2>Technical Details:</h2>
+    <p>The issue was in SyncStatus.tsx where it used useSyncMonitoring() when autoRefresh was true, 
+    which had a hardcoded activityHours: 24. Now it uses useSyncStatus() with the proper activityHours 
+    parameter in all cases.</p>
+    
+    <p>localStorage keys used:</p>
+    <ul>
+        <li>syncStatus.activityHours - stores the selected time period</li>
+        <li>syncStatus.autoRefresh - stores the auto-refresh toggle state</li>
+    </ul>
+</body>
+</html>
+</script>

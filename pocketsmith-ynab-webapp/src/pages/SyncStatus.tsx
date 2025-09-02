@@ -8,32 +8,41 @@ import {
   Switch,
   FormControlLabel,
   Chip,
-  Tooltip,
 } from '@mui/material';
 import {
   Refresh,
   Settings,
-  Info as InfoIcon,
-  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import ManualSyncDialog from '../components/ManualSyncDialog';
 import { SyncProgressTracker } from '../components/SyncProgressTracker';
 import ModernSyncStatusCard from '../components/ModernSyncStatusCard';
 import AccountSyncStateTable from '../components/AccountSyncStateTable';
 import RecentActivityCard from '../components/RecentActivityCard';
-import { useSyncStatus, useSyncMonitoring } from '../hooks/useSyncStatus';
-import type { SyncTriggerResponse, SyncStateOverview } from '../services/syncApi';
+import { useSyncStatus } from '../hooks/useSyncStatus';
+import type { SyncTriggerResponse } from '../services/syncApi';
+
+// Constants for localStorage keys
+const ACTIVITY_HOURS_KEY = 'syncStatus.activityHours';
+const AUTO_REFRESH_KEY = 'syncStatus.autoRefresh';
 
 export const SyncStatus: React.FC = () => {
-  const [activityHours, setActivityHours] = useState(24);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  // Initialize state from localStorage or defaults
+  const [activityHours, setActivityHours] = useState(() => {
+    const saved = localStorage.getItem(ACTIVITY_HOURS_KEY);
+    return saved ? parseInt(saved, 10) : 24;
+  });
+  
+  const [autoRefresh, setAutoRefresh] = useState(() => {
+    const saved = localStorage.getItem(AUTO_REFRESH_KEY);
+    return saved ? JSON.parse(saved) : true;
+  });
 
   // Manual sync dialog and progress tracking
   const [showManualSyncDialog, setShowManualSyncDialog] = useState(false);
   const [showProgressTracker, setShowProgressTracker] = useState(false);
   const [currentSyncResponse, setCurrentSyncResponse] = useState<SyncTriggerResponse | null>(null);
 
-  // Use React Query hooks for data management
+  // Use React Query hooks for data management with proper activityHours
   const {
     syncStateOverview,
     recentActivity,
@@ -47,12 +56,11 @@ export const SyncStatus: React.FC = () => {
     triggerSyncAsync,
     isSyncTriggering,
     syncTriggerError,
-  } = autoRefresh 
-    ? useSyncMonitoring() 
-    : useSyncStatus({ 
-        autoRefresh: false, 
-        activityHours 
-      });
+  } = useSyncStatus({ 
+    autoRefresh, 
+    activityHours,
+    refreshInterval: autoRefresh ? 30 * 1000 : undefined, // 30 seconds when auto-refresh is on
+  });
 
   const handleRefresh = () => {
     refreshAllData();
@@ -92,11 +100,14 @@ export const SyncStatus: React.FC = () => {
   };
 
   const handleAutoRefreshToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setAutoRefresh(event.target.checked);
+    const newValue = event.target.checked;
+    setAutoRefresh(newValue);
+    localStorage.setItem(AUTO_REFRESH_KEY, JSON.stringify(newValue));
   };
 
   const handleActivityHoursChange = (hours: number) => {
     setActivityHours(hours);
+    localStorage.setItem(ACTIVITY_HOURS_KEY, hours.toString());
   };
 
   if (isLoading) {

@@ -213,14 +213,21 @@ export const Dashboard: React.FC = () => {
             {/* Sync Status Card */}
             <Grid item xs={12} sm={6}>
               <Card sx={{ 
-                height: '100%',
+                height: 320,
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
                 }
               }}>
-                <CardContent>
+                <CardContent sx={{ 
+                  flexGrow: 1, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  p: 3
+                }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h6">Sync Status</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -235,29 +242,32 @@ export const Dashboard: React.FC = () => {
                     </Box>
                   </Box>
                   
-                  {syncStatus.data?.progress !== undefined && (
-                    <Box sx={{ mb: 2 }}>
-                      <LinearProgress variant="determinate" value={syncStatus.data.progress} />
-                      <Typography variant="caption" color="text.secondary">
-                        {syncStatus.data.progress}% complete
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {syncStatus.data?.message || 'Ready to sync'}
-                  </Typography>
-                  
-                  {syncStatus.data?.lastSync && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                      Last sync: {formatTimeAgo(syncStatus.data.lastSync)}
+                  <Box sx={{ flexGrow: 1, mb: 2 }}>
+                    {syncStatus.data?.progress !== undefined && (
+                      <Box sx={{ mb: 2 }}>
+                        <LinearProgress variant="determinate" value={syncStatus.data.progress} />
+                        <Typography variant="caption" color="text.secondary">
+                          {syncStatus.data.progress}% complete
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {syncStatus.data?.message || 'Ready to sync'}
                     </Typography>
-                  )}
+                    
+                    {syncStatus.data?.lastSync && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        Last sync: {formatTimeAgo(syncStatus.data.lastSync)}
+                      </Typography>
+                    )}
+                  </Box>
                   
                   <Box sx={{ 
                     display: 'flex', 
                     gap: 1, 
-                    flexDirection: { xs: 'column', sm: 'row' }
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    mt: 'auto'
                   }}>
                     <Button
                       variant="contained"
@@ -286,53 +296,64 @@ export const Dashboard: React.FC = () => {
             {/* Account Mappings Card */}
             <Grid item xs={12} sm={6}>
               <Card sx={{ 
-                height: '100%',
+                height: 320,
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
                 }
               }}>
-                <CardContent>
+                <CardContent sx={{ 
+                  flexGrow: 1, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  p: 3
+                }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h6">Account Mappings</Typography>
                     <AccountTree color="primary" />
                   </Box>
                   
-                  {mappingStats.isLoading ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    <>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={mappingStats.data?.percentage || 0}
-                            sx={{ height: 8, borderRadius: 4 }}
-                          />
-                        </Box>
-                        <Typography variant="h6" color="primary">
-                          {mappingStats.data?.percentage || 0}%
-                        </Typography>
+                  <Box sx={{ flexGrow: 1, mb: 2 }}>
+                    {mappingStats.isLoading ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                        <CircularProgress size={24} />
                       </Box>
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {mappingStats.data?.mapped || 0} of {mappingStats.data?.total || 0} accounts mapped
-                      </Typography>
-                      
-                      {mappingStats.data && mappingStats.data.unmapped > 0 && (
-                        <Alert severity="info" sx={{ mb: 2 }}>
-                          {mappingStats.data.unmapped} accounts need mapping
-                        </Alert>
-                      )}
-                      
-                      {mappingStats.error && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                          Unable to load mapping data
-                        </Alert>
-                      )}
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={mappingStats.data?.percentage || 0}
+                              sx={{ height: 8, borderRadius: 4 }}
+                            />
+                          </Box>
+                          <Typography variant="h6" color="primary">
+                            {mappingStats.data?.percentage || 0}%
+                          </Typography>
+                        </Box>
+                        
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                          {mappingStats.data?.mapped || 0} of {mappingStats.data?.total || 0} accounts mapped
+                        </Typography>
+                        
+                        {mappingStats.data && mappingStats.data.unmapped > 0 && (
+                          <Alert severity="info" sx={{ mb: 2 }}>
+                            {mappingStats.data.unmapped} accounts need mapping
+                          </Alert>
+                        )}
+                        
+                        {mappingStats.error && (
+                          <Alert severity="error" sx={{ mb: 2 }}>
+                            Unable to load mapping data
+                          </Alert>
+                        )}
+                      </>
+                    )}
+                  </Box>
                   
                   <Button
                     variant="contained"
@@ -340,6 +361,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate('/account-mappings')}
                     size="small"
                     fullWidth
+                    sx={{ mt: 'auto' }}
                   >
                     Configure Mappings
                   </Button>
@@ -350,14 +372,21 @@ export const Dashboard: React.FC = () => {
             {/* Balance Comparison Card */}
             <Grid item xs={12} sm={6}>
               <Card sx={{ 
-                height: '100%',
+                height: 320,
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
                 }
               }}>
-                <CardContent>
+                <CardContent sx={{ 
+                  flexGrow: 1, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  p: 3
+                }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h6">Balance Comparison</Typography>
                     <Badge 
@@ -369,43 +398,47 @@ export const Dashboard: React.FC = () => {
                     </Badge>
                   </Box>
                   
-                  {balanceDiscrepancies.isLoading ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    <>
-                      {balanceDiscrepancies.error ? (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                          Unable to load balance data
-                        </Alert>
-                      ) : balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? (
-                        <>
-                          <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
-                            {balanceDiscrepancies.data.length} discrepancies found
-                          </Typography>
-                          
-                          <Box sx={{ mb: 2 }}>
-                            {balanceDiscrepancies.data.slice(0, 2).map((discrepancy, index) => (
-                              <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  {discrepancy.accountName}
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  {discrepancy.difference > 0 ? <TrendingUp color="error" /> : <TrendingDown color="success" />}
-                                  <Typography variant="caption" color={discrepancy.difference > 0 ? 'error.main' : 'success.main'}>
-                                    {formatCurrency(Math.abs(discrepancy.difference), discrepancy.currency)}
+                  <Box sx={{ flexGrow: 1, mb: 2 }}>
+                    {balanceDiscrepancies.isLoading ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                        <CircularProgress size={24} />
+                      </Box>
+                    ) : (
+                      <>
+                        {balanceDiscrepancies.error ? (
+                          <Alert severity="error" sx={{ mb: 2 }}>
+                            Unable to load balance data
+                          </Alert>
+                        ) : balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? (
+                          <>
+                            <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
+                              {balanceDiscrepancies.data.length} discrepancies found
+                            </Typography>
+                            
+                            <Box sx={{ mb: 2 }}>
+                              {balanceDiscrepancies.data.slice(0, 2).map((discrepancy, index) => (
+                                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {discrepancy.accountName}
                                   </Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {discrepancy.difference > 0 ? <TrendingUp color="error" /> : <TrendingDown color="success" />}
+                                    <Typography variant="caption" color={discrepancy.difference > 0 ? 'error.main' : 'success.main'}>
+                                      {formatCurrency(Math.abs(discrepancy.difference), discrepancy.currency)}
+                                    </Typography>
+                                  </Box>
                                 </Box>
-                              </Box>
-                            ))}
-                          </Box>
-                        </>
-                      ) : (
-                        <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
-                          {balanceDiscrepancies.data ? 'All balances match perfectly' : 'No balance data available'}
-                        </Typography>
-                      )}
-                    </>
-                  )}
+                              ))}
+                            </Box>
+                          </>
+                        ) : (
+                          <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
+                            {balanceDiscrepancies.data ? 'All balances match perfectly' : 'No balance data available'}
+                          </Typography>
+                        )}
+                      </>
+                    )}
+                  </Box>
                   
                   <Button
                     variant="contained"
@@ -413,6 +446,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate('/balance-comparison')}
                     size="small"
                     fullWidth
+                    sx={{ mt: 'auto' }}
                   >
                     Compare Now
                   </Button>
@@ -423,65 +457,76 @@ export const Dashboard: React.FC = () => {
             {/* Key Metrics Card */}
             <Grid item xs={12} sm={6}>
               <Card sx={{ 
-                height: '100%',
+                height: 320,
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
                 }
               }}>
-                <CardContent>
+                <CardContent sx={{ 
+                  flexGrow: 1, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  p: 3
+                }}>
                   <Typography variant="h6" gutterBottom>Key Metrics</Typography>
                   
-                  {metrics.isLoading ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="primary">
-                            {metrics.data?.totalAccounts || 0}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Total Accounts
-                          </Typography>
-                        </Box>
+                  <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                    {metrics.isLoading ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                        <CircularProgress size={24} />
+                      </Box>
+                    ) : (
+                      <Grid container spacing={2} sx={{ height: '100%' }}>
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: 'center', py: 2 }}>
+                            <Typography variant="h4" color="primary">
+                              {metrics.data?.totalAccounts || 0}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Total Accounts
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: 'center', py: 2 }}>
+                            <Typography variant="h4" color="success.main">
+                              {metrics.data?.successRate || 0}%
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Success Rate
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: 'center', py: 2 }}>
+                            <Typography variant="h4" color="info.main">
+                              {metrics.data?.avgSyncTime || 0}s
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Avg Sync Time
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: 'center', py: 2 }}>
+                            <Typography 
+                              variant="h4" 
+                              color={metrics.data && metrics.data.dataFreshness > 30 ? 'warning.main' : 'success.main'}
+                            >
+                              {metrics.data?.dataFreshness || 0}m
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Data Age
+                            </Typography>
+                          </Box>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="success.main">
-                            {metrics.data?.successRate || 0}%
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Success Rate
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="info.main">
-                            {metrics.data?.avgSyncTime || 0}s
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Avg Sync Time
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography 
-                            variant="h4" 
-                            color={metrics.data && metrics.data.dataFreshness > 30 ? 'warning.main' : 'success.main'}
-                          >
-                            {metrics.data?.dataFreshness || 0}m
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Data Age
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  )}
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -495,6 +540,7 @@ export const Dashboard: React.FC = () => {
             isLoading={recentActivity.isLoading}
             onRefresh={refreshAllData}
             title="Recent Activity"
+            height={656} // 2 * 320 + 16 (gap between cards)
           />
         </Grid>
       </Grid>

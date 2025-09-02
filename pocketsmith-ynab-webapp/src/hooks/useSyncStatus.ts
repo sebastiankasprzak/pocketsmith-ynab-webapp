@@ -167,11 +167,11 @@ export const useSyncStatus = (options: UseSyncStatusOptions = {}) => {
 /**
  * Hook for background sync monitoring with more frequent updates
  */
-export const useSyncMonitoring = () => {
+export const useSyncMonitoring = (activityHours: number = 24) => {
   return useSyncStatus({
     autoRefresh: true,
     refreshInterval: 30 * 1000, // 30 seconds for active monitoring
-    activityHours: 24,
+    activityHours,
   });
 };
 
