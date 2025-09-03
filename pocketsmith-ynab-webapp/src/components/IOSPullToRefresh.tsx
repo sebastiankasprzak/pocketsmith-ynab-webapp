@@ -45,7 +45,7 @@ export const IOSPullToRefresh = ({
       ref={containerRef}
       sx={{
         position: 'relative',
-        height: '100%',
+        height: '100vh',
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
       }}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Typography,
   Box,
@@ -26,10 +26,20 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { DashboardNotifications } from '../components/DashboardNotifications';
+import { useIOSDetection } from '../hooks/useIOSDetection';
+import { IOSNavigationBar } from '../components/IOSNavigationBar';
+import { IOSSection } from '../components/IOSSection';
+import { IOSCard } from '../components/IOSCard';
+import { IOSButton } from '../components/IOSButton';
+import { IOSStatusBadge } from '../components/IOSStatusBadge';
+import { IOSProgressIndicator } from '../components/IOSProgressIndicator';
+import { IOSPullToRefresh } from '../components/IOSPullToRefresh';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [dismissedNotifications, setDismissedNotifications] = React.useState<string[]>([]);
+  const scrollElementRef = useRef<HTMLDivElement>(null);
+  const { shouldUseIOSExperience } = useIOSDetection();
   
   // Use the custom hook for all dashboard data
   const {
@@ -178,7 +188,267 @@ export const Dashboard: React.FC = () => {
     setDismissedNotifications(prev => [...prev, id]);
   };
 
-  return (
+  // Handle refresh for pull-to-refresh
+  const handleRefresh = async () => {
+    await refreshAllData();
+  };
+
+  // Render iOS-style dashboard
+  const renderIOSDashboard = () => (
+    <Box>
+      <IOSNavigationBar
+        title="Dashboard"
+        large={false}
+      />
+      
+      {/* Smart Notifications */}
+      <DashboardNotifications
+        notifications={notifications}
+        onDismiss={handleDismissNotification}
+      />
+
+        {/* Status Summary Section */}
+        <IOSSection title="Status Summary">
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 600 }}>
+                Sync Status
+              </Typography>
+              <IOSStatusBadge
+                status={syncStatus.data?.status === 'syncing' ? 'syncing' : 
+                       syncStatus.data?.status === 'error' ? 'error' :
+                       syncStatus.data?.status === 'success' ? 'success' : 'inactive'}
+                text={syncStatus.data?.status || 'idle'}
+                animated={syncStatus.data?.status === 'syncing'}
+              />
+            </Box>
+            
+            {syncStatus.data?.progress !== undefined && (
+              <IOSProgressIndicator
+                progress={syncStatus.data.progress}
+                variant="linear"
+                showLabel={true}
+                label="Sync Progress"
+                sx={{ mb: 2 }}
+              />
+            )}
+            
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {syncStatus.data?.message || 'Ready to sync'}
+            </Typography>
+            
+            {syncStatus.data?.lastSync && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                Last sync: {formatTimeAgo(syncStatus.data.lastSync)}
+              </Typography>
+            )}
+            
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <IOSButton
+                variant="primary"
+                onClick={() => syncMutation.mutate()}
+                disabled={syncMutation.isPending || syncStatus.data?.status === 'syncing'}
+                fullWidth={{ xs: true, sm: false }}
+              >
+                {syncMutation.isPending ? 'Syncing...' : 'Sync Now'}
+              </IOSButton>
+              <IOSButton
+                variant="secondary"
+                onClick={() => navigate('/sync-status')}
+                fullWidth={{ xs: true, sm: false }}
+              >
+                View Details
+              </IOSButton>
+            </Box>
+          </Box>
+        </IOSSection>
+
+        {/* Account Mappings Section */}
+        <IOSSection title="Account Mappings">
+          <Box 
+            sx={{ p: 2, cursor: 'pointer' }}
+            onClick={() => navigate('/account-mappings')}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 600 }}>
+                Account Mappings
+              </Typography>
+              <AccountTree color="primary" />
+            </Box>
+            
+            {mappingStats.isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <>
+                <IOSProgressIndicator
+                  progress={mappingStats.data?.percentage || 0}
+                  variant="linear"
+                  showLabel={true}
+                  label={`${mappingStats.data?.mapped || 0} of ${mappingStats.data?.total || 0} accounts mapped`}
+                />
+                
+                {mappingStats.data && mappingStats.data.unmapped > 0 && (
+                  <IOSStatusBadge
+                    status="warning"
+                    text={`${mappingStats.data.unmapped} accounts need mapping`}
+                    variant="filled"
+                    sx={{ mt: 2 }}
+                  />
+                )}
+              </>
+            )}
+          </Box>
+        </IOSSection>
+
+        {/* Balance Comparison Section */}
+        <IOSSection title="Balance Comparison">
+          <Box 
+            sx={{ p: 2, cursor: 'pointer' }}
+            onClick={() => navigate('/balance-comparison')}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 600 }}>
+                Balance Comparison
+              </Typography>
+              <AccountBalance color="primary" />
+            </Box>
+            
+            {balanceDiscrepancies.isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : balanceDiscrepancies.error ? (
+              <IOSStatusBadge
+                status="error"
+                text="Unable to load balance data"
+                variant="filled"
+              />
+            ) : balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? (
+              <>
+                <IOSStatusBadge
+                  status="warning"
+                  text={`${balanceDiscrepancies.data.length} discrepancies found`}
+                  variant="filled"
+                />
+                
+                {balanceDiscrepancies.data.slice(0, 2).map((discrepancy, index) => (
+                  <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, mt: index === 0 ? 2 : 0 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {discrepancy.accountName}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {discrepancy.difference > 0 ? <TrendingUp color="error" /> : <TrendingDown color="success" />}
+                      <Typography variant="body2" color={discrepancy.difference > 0 ? 'error.main' : 'success.main'}>
+                        {formatCurrency(Math.abs(discrepancy.difference), discrepancy.currency)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </>
+            ) : (
+              <IOSStatusBadge
+                status="success"
+                text="All balances match perfectly"
+                variant="filled"
+              />
+            )}
+          </Box>
+        </IOSSection>
+
+        {/* Key Metrics Section */}
+        <IOSSection title="Key Metrics">
+          <Box sx={{ p: 2 }}>
+            {metrics.isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
+                <Grid item xs={6} sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="primary" sx={{ fontSize: '28px', fontWeight: 700 }}>
+                    {metrics.data?.totalAccounts || 0}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
+                    Total Accounts
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="success.main" sx={{ fontSize: '28px', fontWeight: 700 }}>
+                    {metrics.data?.successRate || 0}%
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
+                    Success Rate
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="info.main" sx={{ fontSize: '28px', fontWeight: 700 }}>
+                    {metrics.data?.avgSyncTime || 0}s
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
+                    Avg Sync Time
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sx={{ textAlign: 'center' }}>
+                  <Typography 
+                    variant="h4" 
+                    color={metrics.data && metrics.data.dataFreshness > 30 ? 'warning.main' : 'success.main'}
+                    sx={{ fontSize: '28px', fontWeight: 700 }}
+                  >
+                    {metrics.data?.dataFreshness || 0}m
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
+                    Data Age
+                  </Typography>
+                </Grid>
+              </Grid>
+            )}
+          </Box>
+        </IOSSection>
+
+        {/* Recent Activity Section */}
+        <IOSSection title="Recent Activity">
+          <Box sx={{ p: 2 }}>
+            {recentActivity.isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : recentActivity.data && recentActivity.data.length > 0 ? (
+              <Box>
+                {recentActivity.data.slice(0, 5).map((activity) => (
+                  <Box key={activity.id} sx={{ display: 'flex', alignItems: 'center', py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <StatusIndicator 
+                      status={activity.status} 
+                      showLabel={false}
+                      size="small"
+                      sx={{ mr: 2 }}
+                    />
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="body2" sx={{ fontSize: '15px' }}>
+                        {activity.message}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
+                        {formatTimeAgo(activity.timestamp)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                No recent activity
+              </Typography>
+            )}
+          </Box>
+        </IOSSection>
+
+        <Box sx={{ pb: 4 }} />
+    </Box>
+  );
+
+  // Render standard dashboard for non-iOS devices
+  const renderStandardDashboard = () => (
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
@@ -544,8 +814,8 @@ export const Dashboard: React.FC = () => {
           />
         </Grid>
       </Grid>
-
-
     </Box>
   );
+
+  return shouldUseIOSExperience ? renderIOSDashboard() : renderStandardDashboard();
 };
