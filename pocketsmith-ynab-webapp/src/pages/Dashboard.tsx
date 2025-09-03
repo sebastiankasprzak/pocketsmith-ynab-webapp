@@ -6,10 +6,8 @@ import {
   CardContent,
   Button,
   Chip,
-  LinearProgress,
   Alert,
   Grid,
-  CircularProgress,
   Badge
 } from '@mui/material';
 import {
@@ -28,6 +26,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { DashboardNotifications } from '../components/DashboardNotifications';
+import { IOSDashboardNotifications } from '../components/IOSDashboardNotifications';
 import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useSwipeGestures } from '../hooks/useSwipeGestures';
@@ -40,6 +39,7 @@ import { IOSProgressIndicator } from '../components/IOSProgressIndicator';
 import { IOSPullToRefresh } from '../components/IOSPullToRefresh';
 import { IOSListItem, createEditAction } from '../components/IOSListItem';
 import { IOSMetricCard } from '../components/IOSMetricCard';
+import { IOSSpinner, IOSLoadingOverlay } from '../components/IOSLoadingStates';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -276,7 +276,7 @@ export const Dashboard: React.FC = () => {
         />
         
         {/* Smart Notifications */}
-        <DashboardNotifications
+        <IOSDashboardNotifications
           notifications={notifications}
           onDismiss={handleDismissNotification}
         />
@@ -386,7 +386,7 @@ export const Dashboard: React.FC = () => {
             }
             rightContent={
               mappingStats.isLoading ? (
-                <CircularProgress size={20} />
+                <IOSSpinner size="small" />
               ) : (
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '15px' }}>
                   {mappingStats.data?.percentage || 0}%
@@ -476,7 +476,7 @@ export const Dashboard: React.FC = () => {
             }
             rightContent={
               balanceDiscrepancies.isLoading ? (
-                <CircularProgress size={20} />
+                <IOSSpinner size="small" />
               ) : balanceDiscrepancies.error ? (
                 <IOSStatusBadge
                   status="error"
@@ -586,7 +586,7 @@ export const Dashboard: React.FC = () => {
         <IOSSection title="Key Metrics">
           {metrics.isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
+              <IOSSpinner size="medium" />
             </Box>
           ) : (
             <Box sx={{ p: 2 }}>
@@ -637,7 +637,7 @@ export const Dashboard: React.FC = () => {
           <Box sx={{ p: 2 }}>
             {recentActivity.isLoading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress size={24} />
+                <IOSSpinner size="medium" />
               </Box>
             ) : recentActivity.data && recentActivity.data.length > 0 ? (
               <Box>
@@ -748,7 +748,7 @@ export const Dashboard: React.FC = () => {
                     <Typography variant="h6">Sync Status</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {syncStatus.isLoading ? (
-                        <CircularProgress size={20} />
+                        <IOSSpinner size="small" />
                       ) : (
                         <StatusIndicator 
                           status={syncStatus.data?.status || 'idle'}
@@ -761,10 +761,13 @@ export const Dashboard: React.FC = () => {
                   <Box sx={{ flexGrow: 1, mb: 2 }}>
                     {syncStatus.data?.progress !== undefined && (
                       <Box sx={{ mb: 2 }}>
-                        <LinearProgress variant="determinate" value={syncStatus.data.progress} />
-                        <Typography variant="caption" color="text.secondary">
-                          {syncStatus.data.progress}% complete
-                        </Typography>
+                        <IOSProgressIndicator 
+                          progress={syncStatus.data.progress} 
+                          variant="linear" 
+                          size="small" 
+                          showLabel={true}
+                          label={`${syncStatus.data.progress}% complete`}
+                        />
                       </Box>
                     )}
                     
@@ -787,7 +790,7 @@ export const Dashboard: React.FC = () => {
                   }}>
                     <Button
                       variant="contained"
-                      startIcon={syncMutation.isPending ? <CircularProgress size={16} /> : <PlayArrow />}
+                      startIcon={syncMutation.isPending ? <IOSSpinner size="small" /> : <PlayArrow />}
                       onClick={handleSyncWithFeedback}
                       disabled={syncMutation.isPending || syncStatus.data?.status === 'syncing'}
                       size="small"
@@ -852,16 +855,18 @@ export const Dashboard: React.FC = () => {
                   <Box sx={{ flexGrow: 1, mb: 2 }}>
                     {mappingStats.isLoading ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress size={24} />
+                        <IOSSpinner size="medium" />
                       </Box>
                     ) : (
                       <>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                           <Box sx={{ flexGrow: 1 }}>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={mappingStats.data?.percentage || 0}
-                              sx={{ height: 8, borderRadius: 4 }}
+                            <IOSProgressIndicator 
+                              progress={mappingStats.data?.percentage || 0}
+                              variant="linear"
+                              size="small"
+                              showLabel={false}
+                              color={mappingStats.data?.percentage === 100 ? 'success' : 'primary'}
                             />
                           </Box>
                           <Typography variant="h6" color="primary">
@@ -945,7 +950,7 @@ export const Dashboard: React.FC = () => {
                   <Box sx={{ flexGrow: 1, mb: 2 }}>
                     {balanceDiscrepancies.isLoading ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress size={24} />
+                        <IOSSpinner size="medium" />
                       </Box>
                     ) : (
                       <>
@@ -1021,7 +1026,7 @@ export const Dashboard: React.FC = () => {
                   <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
                     {metrics.isLoading ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <CircularProgress size={24} />
+                        <IOSSpinner size="medium" />
                       </Box>
                     ) : (
                       <Grid container spacing={2} sx={{ height: '100%' }}>
