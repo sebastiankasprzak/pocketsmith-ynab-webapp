@@ -6,6 +6,8 @@ import { IOSButton } from '../IOSButton';
 import { IOSCard } from '../IOSCard';
 import { IOSSection } from '../IOSSection';
 import { IOSListItem, createDeleteAction, createEditAction } from '../IOSListItem';
+import { IOSProgressIndicator } from '../IOSProgressIndicator';
+import { IOSStatusBadge } from '../IOSStatusBadge';
 
 // Mock the haptic feedback hook
 vi.mock('../../hooks/useHapticFeedback', () => ({
@@ -269,6 +271,140 @@ describe('iOS Components', () => {
       
       editAction.onAction();
       expect(onEdit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('IOSProgressIndicator', () => {
+    it('renders linear progress indicator', () => {
+      render(
+        <TestWrapper>
+          <IOSProgressIndicator progress={50} variant="linear" />
+        </TestWrapper>
+      );
+      
+      const progressElement = document.querySelector('.ios-progress-indicator.linear');
+      expect(progressElement).toBeInTheDocument();
+    });
+
+    it('renders circular progress indicator', () => {
+      render(
+        <TestWrapper>
+          <IOSProgressIndicator progress={75} variant="circular" />
+        </TestWrapper>
+      );
+      
+      const progressElement = document.querySelector('.ios-progress-indicator.circular');
+      expect(progressElement).toBeInTheDocument();
+    });
+
+    it('shows progress percentage when showLabel is true', () => {
+      render(
+        <TestWrapper>
+          <IOSProgressIndicator 
+            progress={60} 
+            variant="linear" 
+            showLabel={true}
+          />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('60%')).toBeInTheDocument();
+    });
+
+    it('handles indeterminate progress', () => {
+      render(
+        <TestWrapper>
+          <IOSProgressIndicator variant="linear" />
+        </TestWrapper>
+      );
+      
+      const progressElement = document.querySelector('.ios-progress-indicator.linear');
+      expect(progressElement).toBeInTheDocument();
+    });
+  });
+
+  describe('IOSStatusBadge', () => {
+    it('renders with status and text', () => {
+      render(
+        <TestWrapper>
+          <IOSStatusBadge status="success" text="Completed" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Completed')).toBeInTheDocument();
+    });
+
+    it('renders different status types', () => {
+      const { rerender } = render(
+        <TestWrapper>
+          <IOSStatusBadge status="success" text="Success" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Success')).toBeInTheDocument();
+
+      rerender(
+        <TestWrapper>
+          <IOSStatusBadge status="error" text="Error" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Error')).toBeInTheDocument();
+
+      rerender(
+        <TestWrapper>
+          <IOSStatusBadge status="warning" text="Warning" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Warning')).toBeInTheDocument();
+    });
+
+    it('handles click events', () => {
+      const handleClick = vi.fn();
+      render(
+        <TestWrapper>
+          <IOSStatusBadge 
+            status="info" 
+            text="Clickable" 
+            onClick={handleClick}
+          />
+        </TestWrapper>
+      );
+      
+      const badge = screen.getByText('Clickable').closest('div');
+      fireEvent.click(badge!);
+      expect(handleClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders dot variant correctly', () => {
+      render(
+        <TestWrapper>
+          <IOSStatusBadge status="active" text="Online" variant="dot" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Online')).toBeInTheDocument();
+      const badgeElement = document.querySelector('.ios-status-badge.dot');
+      expect(badgeElement).toBeInTheDocument();
+    });
+
+    it('renders different sizes', () => {
+      const { rerender } = render(
+        <TestWrapper>
+          <IOSStatusBadge status="success" text="Small" size="small" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Small')).toBeInTheDocument();
+
+      rerender(
+        <TestWrapper>
+          <IOSStatusBadge status="success" text="Large" size="large" />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByText('Large')).toBeInTheDocument();
     });
   });
 });

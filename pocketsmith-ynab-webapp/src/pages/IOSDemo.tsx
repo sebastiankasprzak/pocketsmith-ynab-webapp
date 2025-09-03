@@ -22,6 +22,8 @@ import {
   IOSProgressBar, 
   IOSPulsingDot 
 } from '../components/IOSLoadingStates';
+import { IOSProgressIndicator } from '../components/IOSProgressIndicator';
+import { IOSStatusBadge } from '../components/IOSStatusBadge';
 import { IOSDetectionDemo } from '../components/IOSDetectionDemo';
 
 export const IOSDemo = () => {
@@ -235,6 +237,136 @@ export const IOSDemo = () => {
                 </IOSButton>
               </Box>
             </IOSLoadingOverlay>
+          </Box>
+        </IOSCard>
+
+        {/* Progress Indicators Demo */}
+        <IOSCard>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            iOS Progress Indicators
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Linear Progress Indicators */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Linear Progress:</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <IOSProgressIndicator 
+                  progress={progress} 
+                  variant="linear" 
+                  showLabel={true}
+                  label="Sync Progress"
+                />
+                <IOSProgressIndicator 
+                  progress={85} 
+                  variant="linear" 
+                  color="success"
+                  size="small"
+                  showLabel={true}
+                />
+                <IOSProgressIndicator 
+                  variant="linear" 
+                  color="warning"
+                  size="large"
+                  showLabel={true}
+                  label="Processing..."
+                />
+              </Box>
+            </Box>
+
+            {/* Circular Progress Indicators */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Circular Progress:</Typography>
+              <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', justifyContent: 'center' }}>
+                <IOSProgressIndicator 
+                  progress={progress} 
+                  variant="circular" 
+                  showLabel={true}
+                  size="small"
+                />
+                <IOSProgressIndicator 
+                  progress={75} 
+                  variant="circular" 
+                  color="success"
+                  showLabel={true}
+                />
+                <IOSProgressIndicator 
+                  variant="circular" 
+                  color="primary"
+                  size="large"
+                  showLabel={true}
+                  label="Loading"
+                />
+              </Box>
+            </Box>
+          </Box>
+        </IOSCard>
+
+        {/* Status Badges Demo */}
+        <IOSCard>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            iOS Status Badges
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Filled Badges */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Filled Badges:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <IOSStatusBadge status="success" text="Synced" />
+                <IOSStatusBadge status="error" text="Failed" />
+                <IOSStatusBadge status="warning" text="Pending" />
+                <IOSStatusBadge status="info" text="Info" />
+                <IOSStatusBadge status="active" text="Online" />
+                <IOSStatusBadge status="inactive" text="Offline" />
+              </Box>
+            </Box>
+
+            {/* Outlined Badges */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Outlined Badges:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <IOSStatusBadge status="success" text="Connected" variant="outlined" />
+                <IOSStatusBadge status="warning" text="Attention" variant="outlined" />
+                <IOSStatusBadge status="error" text="Disconnected" variant="outlined" />
+              </Box>
+            </Box>
+
+            {/* Dot Badges */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Dot Badges:</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <IOSStatusBadge status="active" text="Account is active" variant="dot" />
+                <IOSStatusBadge status="syncing" text="Syncing in progress..." variant="dot" animated />
+                <IOSStatusBadge status="pending" text="Waiting for response..." variant="dot" animated />
+                <IOSStatusBadge status="inactive" text="Account is inactive" variant="dot" />
+              </Box>
+            </Box>
+
+            {/* Different Sizes */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Different Sizes:</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <IOSStatusBadge status="success" text="Small" size="small" />
+                <IOSStatusBadge status="warning" text="Medium" size="medium" />
+                <IOSStatusBadge status="error" text="Large" size="large" />
+              </Box>
+            </Box>
+
+            {/* Interactive Badges */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Interactive Badges:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <IOSStatusBadge 
+                  status="info" 
+                  text="Click me" 
+                  onClick={() => showInfo('Badge Clicked', 'You clicked the status badge!')}
+                />
+                <IOSStatusBadge 
+                  status="success" 
+                  text="Refresh" 
+                  onClick={() => showSuccess('Refreshed', 'Data has been refreshed')}
+                />
+              </Box>
+            </Box>
           </Box>
         </IOSCard>
 

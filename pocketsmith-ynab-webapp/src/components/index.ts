@@ -23,6 +23,10 @@ export { IOSBottomSheet } from './IOSBottomSheet';
 export { IOSSearchBar } from './IOSSearchBar';
 export { IOSNotification, useIOSNotifications } from './IOSNotification';
 
+// iOS Feedback Components
+export { IOSProgressIndicator } from './IOSProgressIndicator';
+export { IOSStatusBadge } from './IOSStatusBadge';
+
 // iOS Loading States
 export { 
   IOSSpinner,
