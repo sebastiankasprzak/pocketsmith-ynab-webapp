@@ -50,14 +50,14 @@
   - Add dark mode support with proper iOS dark theme colors
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 3. Create Core iOS Component Library
+- [x] 3. Create Core iOS Component Library
   - Build IOSSection component for grouped content layout
   - Create IOSCard component with proper iOS styling and press animations
   - Implement IOSListItem component with disclosure indicators and swipe actions
   - Build IOSButton component with iOS-style press animations and haptic feedback
   - _Requirements: 5.1, 5.4, 6.1, 6.5_
 
-- [ ] 4. Implement iOS Form Components
+- [x] 4. Implement iOS Form Components
   - Create IOSTextField component with iOS-style input styling and focus states
   - Build IOSPicker component to replace Material-UI dropdowns
   - Implement IOSSegmentedControl for filtering and sorting options

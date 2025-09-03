@@ -6,12 +6,16 @@ export { IOSActionSheet } from './IOSActionSheet';
 export { IOSPullToRefresh } from './IOSPullToRefresh';
 export { IOSSwipeableCard } from './IOSSwipeableCard';
 
+// iOS Form Components
+export { IOSTextField } from './IOSTextField';
+export { IOSPicker } from './IOSPicker';
+export { IOSSegmentedControl } from './IOSSegmentedControl';
+export { IOSToggle } from './IOSToggle';
+
 // iOS-specific components - Phase 2 Advanced
 export { IOSContextMenu } from './IOSContextMenu';
 export { IOSBottomSheet } from './IOSBottomSheet';
 export { IOSSearchBar } from './IOSSearchBar';
-export { IOSSegmentedControl } from './IOSSegmentedControl';
-export { IOSToggle } from './IOSToggle';
 export { IOSNotification, useIOSNotifications } from './IOSNotification';
 
 // iOS Loading States
