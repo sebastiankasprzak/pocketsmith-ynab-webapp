@@ -19,7 +19,9 @@ import {
   TrendingUp,
   TrendingDown,
   Settings,
-  Visibility
+  Visibility,
+  Refresh,
+  MoreHoriz
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -27,6 +29,8 @@ import { StatusIndicator } from '../components/StatusIndicator';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { DashboardNotifications } from '../components/DashboardNotifications';
 import { useIOSDetection } from '../hooks/useIOSDetection';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import { IOSNavigationBar } from '../components/IOSNavigationBar';
 import { IOSSection } from '../components/IOSSection';
 import { IOSCard } from '../components/IOSCard';
@@ -34,7 +38,7 @@ import { IOSButton } from '../components/IOSButton';
 import { IOSStatusBadge } from '../components/IOSStatusBadge';
 import { IOSProgressIndicator } from '../components/IOSProgressIndicator';
 import { IOSPullToRefresh } from '../components/IOSPullToRefresh';
-import { IOSListItem } from '../components/IOSListItem';
+import { IOSListItem, createEditAction } from '../components/IOSListItem';
 import { IOSMetricCard } from '../components/IOSMetricCard';
 
 export const Dashboard: React.FC = () => {
@@ -42,6 +46,7 @@ export const Dashboard: React.FC = () => {
   const [dismissedNotifications, setDismissedNotifications] = React.useState<string[]>([]);
   const scrollElementRef = useRef<HTMLDivElement>(null);
   const { shouldUseIOSExperience } = useIOSDetection();
+  const { triggerHaptic } = useHapticFeedback();
   
   // Use the custom hook for all dashboard data
   const {
@@ -53,6 +58,41 @@ export const Dashboard: React.FC = () => {
     syncMutation,
     refreshAllData
   } = useDashboardData();
+
+  // Enhanced refresh function with haptic feedback
+  const handleRefreshWithFeedback = async () => {
+    try {
+      triggerHaptic('light');
+    } catch (error) {
+      console.debug('Haptic feedback failed:', error);
+    }
+    await refreshAllData();
+    try {
+      triggerHaptic('success');
+    } catch (error) {
+      console.debug('Haptic feedback failed:', error);
+    }
+  };
+
+  // Navigation with haptic feedback
+  const navigateWithFeedback = (path: string) => {
+    try {
+      triggerHaptic('selection');
+    } catch (error) {
+      console.debug('Haptic feedback failed:', error);
+    }
+    navigate(path);
+  };
+
+  // Sync with haptic feedback
+  const handleSyncWithFeedback = () => {
+    try {
+      triggerHaptic('medium');
+    } catch (error) {
+      console.debug('Haptic feedback failed:', error);
+    }
+    syncMutation.mutate();
+  };
 
   // Helper functions
   const formatTimeAgo = (date: Date) => {
@@ -195,19 +235,51 @@ export const Dashboard: React.FC = () => {
     await refreshAllData();
   };
 
+  // Swipe gesture handlers for quick actions
+  const swipeGestureRef = useSwipeGestures({
+    onSwipeLeft: () => {
+      triggerHaptic('light');
+      navigate('/account-mappings');
+    },
+    onSwipeRight: () => {
+      triggerHaptic('light');
+      navigate('/sync-status');
+    },
+    onSwipeDown: () => {
+      triggerHaptic('light');
+      handleRefreshWithFeedback();
+    },
+    threshold: 100,
+    preventDefaultTouchmove: false
+  });
+
+  // Simple pull-to-refresh using existing swipe gesture (swipe down)
+  // This provides the pull-to-refresh functionality without complex containers
+
   // Render iOS-style dashboard
   const renderIOSDashboard = () => (
     <Box>
-      <IOSNavigationBar
-        title="Dashboard"
-        large={false}
-      />
-      
-      {/* Smart Notifications */}
-      <DashboardNotifications
-        notifications={notifications}
-        onDismiss={handleDismissNotification}
-      />
+        <IOSNavigationBar
+          title="Dashboard"
+          large={false}
+          rightAction={
+            <IOSButton
+              variant="plain"
+              size="small"
+              onClick={handleRefreshWithFeedback}
+              hapticFeedback={true}
+              pressAnimation={true}
+            >
+              <Refresh sx={{ fontSize: '20px' }} />
+            </IOSButton>
+          }
+        />
+        
+        {/* Smart Notifications */}
+        <DashboardNotifications
+          notifications={notifications}
+          onDismiss={handleDismissNotification}
+        />
 
         {/* Sync Status Section - iOS Grouped List Format */}
         <IOSSection title="Sync Status">
@@ -239,7 +311,23 @@ export const Dashboard: React.FC = () => {
               />
             }
             showDisclosure={true}
-            onClick={() => navigate('/sync-status')}
+            onClick={() => navigateWithFeedback('/sync-status')}
+            swipeActions={[
+              {
+                icon: <PlayArrow sx={{ fontSize: '20px' }} />,
+                label: 'Sync',
+                color: '#FFFFFF',
+                backgroundColor: '#007AFF',
+                onAction: handleSyncWithFeedback,
+              },
+              {
+                icon: <MoreHoriz sx={{ fontSize: '20px' }} />,
+                label: 'Details',
+                color: '#FFFFFF',
+                backgroundColor: '#8E8E93',
+                onAction: () => navigateWithFeedback('/sync-status'),
+              }
+            ]}
           >
             <Box sx={{ flex: 1 }}>
               <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400, mb: 0.5 }}>
@@ -266,7 +354,7 @@ export const Dashboard: React.FC = () => {
           
           <IOSListItem
             leftIcon={<PlayArrow sx={{ color: '#007AFF', fontSize: '20px' }} />}
-            onClick={() => syncMutation.mutate()}
+            onClick={handleSyncWithFeedback}
             disabled={syncMutation.isPending || syncStatus.data?.status === 'syncing'}
             divider={false}
           >
@@ -306,7 +394,16 @@ export const Dashboard: React.FC = () => {
               )
             }
             showDisclosure={true}
-            onClick={() => navigate('/account-mappings')}
+            onClick={() => navigateWithFeedback('/account-mappings')}
+            swipeActions={[
+              {
+                icon: <Settings sx={{ fontSize: '20px' }} />,
+                label: 'Configure',
+                color: '#FFFFFF',
+                backgroundColor: '#007AFF',
+                onAction: () => navigateWithFeedback('/account-mappings'),
+              }
+            ]}
           >
             <Box sx={{ flex: 1 }}>
               <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400, mb: 0.5 }}>
@@ -341,8 +438,17 @@ export const Dashboard: React.FC = () => {
                   size="small"
                 />
               }
-              onClick={() => navigate('/account-mappings')}
+              onClick={() => navigateWithFeedback('/account-mappings')}
               divider={false}
+              swipeActions={[
+                {
+                  icon: <Settings sx={{ fontSize: '20px' }} />,
+                  label: 'Configure',
+                  color: '#FFFFFF',
+                  backgroundColor: '#FF9500',
+                  onAction: () => navigateWithFeedback('/account-mappings'),
+                }
+              ]}
             >
               <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400 }}>
                 Configure Unmapped Accounts
@@ -395,7 +501,26 @@ export const Dashboard: React.FC = () => {
               )
             }
             showDisclosure={true}
-            onClick={() => navigate('/balance-comparison')}
+            onClick={() => navigateWithFeedback('/balance-comparison')}
+            swipeActions={[
+              {
+                icon: <Refresh sx={{ fontSize: '20px' }} />,
+                label: 'Refresh',
+                color: '#FFFFFF',
+                backgroundColor: '#007AFF',
+                onAction: () => {
+                  triggerHaptic('medium');
+                  refreshAllData();
+                },
+              },
+              {
+                icon: <Visibility sx={{ fontSize: '20px' }} />,
+                label: 'View',
+                color: '#FFFFFF',
+                backgroundColor: '#8E8E93',
+                onAction: () => navigateWithFeedback('/balance-comparison'),
+              }
+            ]}
           >
             <Box sx={{ flex: 1 }}>
               <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400, mb: 0.5 }}>
@@ -436,8 +561,17 @@ export const Dashboard: React.FC = () => {
                       {formatCurrency(Math.abs(discrepancy.difference), discrepancy.currency)}
                     </Typography>
                   }
-                  onClick={() => navigate('/balance-comparison')}
+                  onClick={() => navigateWithFeedback('/balance-comparison')}
                   divider={index < 1}
+                  swipeActions={[
+                    {
+                      icon: <Visibility sx={{ fontSize: '20px' }} />,
+                      label: 'Details',
+                      color: '#FFFFFF',
+                      backgroundColor: '#007AFF',
+                      onAction: () => navigateWithFeedback('/balance-comparison'),
+                    }
+                  ]}
                 >
                   <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400 }}>
                     {discrepancy.accountName}
@@ -463,6 +597,7 @@ export const Dashboard: React.FC = () => {
                     label="Total Accounts"
                     color="primary"
                     icon={<AccountTree sx={{ fontSize: '24px' }} />}
+                    onClick={() => navigateWithFeedback('/account-mappings')}
                   />
                 </Grid>
                 <Grid item xs={6}>
@@ -471,6 +606,7 @@ export const Dashboard: React.FC = () => {
                     label="Success Rate"
                     color="success"
                     icon={<TrendingUp sx={{ fontSize: '24px' }} />}
+                    onClick={() => navigateWithFeedback('/sync-status')}
                   />
                 </Grid>
                 <Grid item xs={6}>
@@ -479,6 +615,7 @@ export const Dashboard: React.FC = () => {
                     label="Avg Sync Time"
                     color="info"
                     icon={<PlayArrow sx={{ fontSize: '24px' }} />}
+                    onClick={() => navigateWithFeedback('/sync-status')}
                   />
                 </Grid>
                 <Grid item xs={6}>
@@ -486,7 +623,8 @@ export const Dashboard: React.FC = () => {
                     value={`${metrics.data?.dataFreshness || 0}m`}
                     label="Data Age"
                     color={metrics.data && metrics.data.dataFreshness > 30 ? 'warning' : 'success'}
-                    subtitle={metrics.data && metrics.data.dataFreshness > 30 ? 'Consider refreshing' : 'Up to date'}
+                    subtitle={metrics.data && metrics.data.dataFreshness > 30 ? 'Tap to refresh' : 'Up to date'}
+                    onClick={handleRefreshWithFeedback}
                   />
                 </Grid>
               </Grid>
@@ -542,18 +680,34 @@ export const Dashboard: React.FC = () => {
         <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
           Dashboard
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="body1" color="text.secondary">
-            PocketSmith-YNAB Sync Manager
-          </Typography>
-          {metrics.data && (
-            <Chip
-              size="small"
-              label={`Data updated ${metrics.data.dataFreshness}m ago`}
-              color={metrics.data.dataFreshness > 30 ? 'warning' : 'success'}
-              variant="outlined"
-            />
-          )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Typography variant="body1" color="text.secondary">
+              PocketSmith-YNAB Sync Manager
+            </Typography>
+            {metrics.data && (
+              <Chip
+                size="small"
+                label={`Data updated ${metrics.data.dataFreshness}m ago`}
+                color={metrics.data.dataFreshness > 30 ? 'warning' : 'success'}
+                variant="outlined"
+              />
+            )}
+          </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Refresh />}
+            onClick={handleRefreshWithFeedback}
+            sx={{
+              transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+              '&:active': {
+                transform: 'scale(0.96)',
+              }
+            }}
+          >
+            Refresh
+          </Button>
         </Box>
       </Box>
 
@@ -574,11 +728,16 @@ export const Dashboard: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                cursor: 'pointer',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
+                },
+                '&:active': {
+                  transform: 'translateY(-1px) scale(0.98)',
                 }
-              }}>
+              }}
+              onClick={() => navigateWithFeedback('/sync-status')}>
                 <CardContent sx={{ 
                   flexGrow: 1, 
                   display: 'flex', 
@@ -629,19 +788,31 @@ export const Dashboard: React.FC = () => {
                     <Button
                       variant="contained"
                       startIcon={syncMutation.isPending ? <CircularProgress size={16} /> : <PlayArrow />}
-                      onClick={() => syncMutation.mutate()}
+                      onClick={handleSyncWithFeedback}
                       disabled={syncMutation.isPending || syncStatus.data?.status === 'syncing'}
                       size="small"
                       fullWidth={{ xs: true, sm: false }}
+                      sx={{
+                        transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                        '&:active': {
+                          transform: 'scale(0.96)',
+                        }
+                      }}
                     >
                       {syncMutation.isPending ? 'Syncing...' : 'Sync Now'}
                     </Button>
                     <Button
                       variant="outlined"
                       startIcon={<Visibility />}
-                      onClick={() => navigate('/sync-status')}
+                      onClick={() => navigateWithFeedback('/sync-status')}
                       size="small"
                       fullWidth={{ xs: true, sm: false }}
+                      sx={{
+                        transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                        '&:active': {
+                          transform: 'scale(0.96)',
+                        }
+                      }}
                     >
                       View Details
                     </Button>
@@ -657,11 +828,16 @@ export const Dashboard: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                cursor: 'pointer',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
+                },
+                '&:active': {
+                  transform: 'translateY(-1px) scale(0.98)',
                 }
-              }}>
+              }}
+              onClick={() => navigateWithFeedback('/account-mappings')}>
                 <CardContent sx={{ 
                   flexGrow: 1, 
                   display: 'flex', 
@@ -715,10 +891,16 @@ export const Dashboard: React.FC = () => {
                   <Button
                     variant="contained"
                     startIcon={<Settings />}
-                    onClick={() => navigate('/account-mappings')}
+                    onClick={() => navigateWithFeedback('/account-mappings')}
                     size="small"
                     fullWidth
-                    sx={{ mt: 'auto' }}
+                    sx={{ 
+                      mt: 'auto',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                      '&:active': {
+                        transform: 'scale(0.96)',
+                      }
+                    }}
                   >
                     Configure Mappings
                   </Button>
@@ -733,11 +915,16 @@ export const Dashboard: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                cursor: 'pointer',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: 4
+                },
+                '&:active': {
+                  transform: 'translateY(-1px) scale(0.98)',
                 }
-              }}>
+              }}
+              onClick={() => navigateWithFeedback('/balance-comparison')}>
                 <CardContent sx={{ 
                   flexGrow: 1, 
                   display: 'flex', 

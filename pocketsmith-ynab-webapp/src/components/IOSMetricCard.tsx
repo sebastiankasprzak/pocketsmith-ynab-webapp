@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, useTheme } from '@mui/material';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSMetricCardProps {
   value: string | number;
@@ -26,6 +27,8 @@ export const IOSMetricCard = ({
 }: IOSMetricCardProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const { triggerHaptic } = useHapticFeedback();
+  const [isPressed, setIsPressed] = useState(false);
 
   const getColorValue = () => {
     switch (color) {
@@ -42,10 +45,50 @@ export const IOSMetricCard = ({
     }
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      try {
+        triggerHaptic('light');
+      } catch (error) {
+        console.debug('Haptic feedback failed:', error);
+      }
+      onClick();
+    }
+  };
+
+  const handleMouseDown = () => {
+    if (onClick) {
+      setIsPressed(true);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPressed(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPressed(false);
+  };
+
+  const handleTouchStart = () => {
+    if (onClick) {
+      setIsPressed(true);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPressed(false);
+  };
+
   return (
     <Box
       className={`ios-metric-card ${className}`}
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -59,15 +102,14 @@ export const IOSMetricCard = ({
           : '1px solid rgba(0, 0, 0, 0.1)',
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+        transform: isPressed ? 'scale(0.96)' : 'scale(1)',
+        opacity: isPressed ? 0.8 : 1,
         minHeight: 100,
         '&:hover': onClick ? {
-          transform: 'translateY(-2px)',
+          transform: isPressed ? 'scale(0.96)' : 'translateY(-2px)',
           boxShadow: isDark 
             ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
             : '0 4px 12px rgba(0, 0, 0, 0.15)',
-        } : {},
-        '&:active': onClick ? {
-          transform: 'translateY(0)',
         } : {},
       }}
     >
