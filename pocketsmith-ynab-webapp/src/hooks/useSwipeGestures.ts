@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface SwipeGestureOptions {
   onSwipeLeft?: () => void;
@@ -24,35 +24,45 @@ export const useSwipeGestures = (options: SwipeGestureOptions) => {
     preventDefaultTouchmove = true
   } = options;
 
-  const [touchStart, setTouchStart] = useState<TouchPosition | null>(null);
-  const [touchEnd, setTouchEnd] = useState<TouchPosition | null>(null);
+  const touchStart = useRef<TouchPosition | null>(null);
+  const touchEnd = useRef<TouchPosition | null>(null);
   const elementRef = useRef<HTMLElement>(null);
+  const animationFrameRef = useRef<number>();
 
   const minSwipeDistance = threshold;
 
-  const onTouchStart = (e: TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart({
+  // Optimized touch handlers with reduced state updates
+  const onTouchStart = useCallback((e: TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = {
       x: e.targetTouches[0].clientX,
       y: e.targetTouches[0].clientY
-    });
-  };
+    };
+  }, []);
 
-  const onTouchMove = (e: TouchEvent) => {
+  const onTouchMove = useCallback((e: TouchEvent) => {
     if (preventDefaultTouchmove) {
       e.preventDefault();
     }
-    setTouchEnd({
-      x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY
+    
+    // Use RAF to throttle touch move updates
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(() => {
+      touchEnd.current = {
+        x: e.targetTouches[0].clientX,
+        y: e.targetTouches[0].clientY
+      };
     });
-  };
+  }, [preventDefaultTouchmove]);
 
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart.current || !touchEnd.current) return;
 
-    const distanceX = touchStart.x - touchEnd.x;
-    const distanceY = touchStart.y - touchEnd.y;
+    const distanceX = touchStart.current.x - touchEnd.current.x;
+    const distanceY = touchStart.current.y - touchEnd.current.y;
     const isLeftSwipe = distanceX > minSwipeDistance;
     const isRightSwipe = distanceX < -minSwipeDistance;
     const isUpSwipe = distanceY > minSwipeDistance;
@@ -76,7 +86,7 @@ export const useSwipeGestures = (options: SwipeGestureOptions) => {
         onSwipeDown();
       }
     }
-  };
+  }, [minSwipeDistance, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown]);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -90,8 +100,13 @@ export const useSwipeGestures = (options: SwipeGestureOptions) => {
       element.removeEventListener('touchstart', onTouchStart);
       element.removeEventListener('touchmove', onTouchMove);
       element.removeEventListener('touchend', onTouchEnd);
+      
+      // Cleanup animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [touchStart, touchEnd]);
+  }, [onTouchStart, onTouchMove, onTouchEnd]);
 
   return elementRef;
 };

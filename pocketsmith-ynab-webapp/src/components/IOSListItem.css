@@ -1,0 +1,66 @@
+/* iOS List Item Performance Optimizations */
+
+.ios-list-item {
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  
+  /* Optimize for animations */
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  
+  /* Smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  
+  /* Prevent text selection during swipe */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  /* Prevent tap highlight on iOS */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-list-item.swiping {
+  /* Disable transitions during active swiping for better performance */
+  transition: none !important;
+}
+
+.ios-list-item-actions {
+  /* Optimize action buttons */
+  will-change: opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* CSS custom properties for smooth transforms */
+.ios-list-item {
+  --swipe-offset: 0px;
+  transform: translateX(calc(-1 * var(--swipe-offset))) translateZ(0);
+}
+
+/* Smooth spring animation for snap back */
+.ios-list-item.snapping {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Optimize for different device pixel ratios */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .ios-list-item {
+    /* Subpixel rendering optimizations for retina displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .ios-list-item {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Alert, Box, Button, Collapse, IconButton } from '@mui/material';
 import { Close, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -18,14 +18,17 @@ interface Notification {
 interface DashboardNotificationsProps {
   notifications: Notification[];
   onDismiss?: (id: string) => void;
+  autoHideDuration?: number; // in milliseconds, default 10 seconds
 }
 
 export const DashboardNotifications: React.FC<DashboardNotificationsProps> = ({
   notifications,
-  onDismiss
+  onDismiss,
+  autoHideDuration = 10000 // 10 seconds default
 }) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = React.useState<string[]>([]);
+  const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const toggleExpanded = (id: string) => {
     setExpanded(prev => 
@@ -34,6 +37,46 @@ export const DashboardNotifications: React.FC<DashboardNotificationsProps> = ({
         : [...prev, id]
     );
   };
+
+  const handleDismiss = (id: string) => {
+    // Clear the timer for this notification
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
+    
+    onDismiss?.(id);
+  };
+
+  // Set up auto-dismiss timers for notifications
+  useEffect(() => {
+    notifications.forEach((notification) => {
+      // Only auto-dismiss if dismissible and not already has a timer
+      if (notification.dismissible !== false && !timersRef.current.has(notification.id)) {
+        const timer = setTimeout(() => {
+          handleDismiss(notification.id);
+        }, autoHideDuration);
+        
+        timersRef.current.set(notification.id, timer);
+      }
+    });
+
+    // Cleanup timers for notifications that are no longer present
+    const currentNotificationIds = new Set(notifications.map(n => n.id));
+    timersRef.current.forEach((timer, id) => {
+      if (!currentNotificationIds.has(id)) {
+        clearTimeout(timer);
+        timersRef.current.delete(id);
+      }
+    });
+
+    // Cleanup all timers on unmount
+    return () => {
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current.clear();
+    };
+  }, [notifications, autoHideDuration]);
 
   if (notifications.length === 0) return null;
 
@@ -68,7 +111,7 @@ export const DashboardNotifications: React.FC<DashboardNotificationsProps> = ({
                 <IconButton
                   size="small"
                   color="inherit"
-                  onClick={() => onDismiss(notification.id)}
+                  onClick={() => handleDismiss(notification.id)}
                 >
                   <Close />
                 </IconButton>

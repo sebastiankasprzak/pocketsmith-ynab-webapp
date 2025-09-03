@@ -275,7 +275,7 @@ export const Dashboard: React.FC = () => {
           }
         />
         
-        {/* Smart Notifications */}
+        {/* Smart Notifications - Now as overlay */}
         <IOSDashboardNotifications
           notifications={notifications}
           onDismiss={handleDismissNotification}
@@ -712,9 +712,10 @@ export const Dashboard: React.FC = () => {
       </Box>
 
       {/* Smart Notifications */}
-      <DashboardNotifications
+      <IOSDashboardNotifications
         notifications={notifications}
         onDismiss={handleDismissNotification}
+        autoHideDuration={5000}
       />
 
       <Grid container spacing={{ xs: 2, md: 3 }}>
