@@ -34,6 +34,8 @@ import { IOSButton } from '../components/IOSButton';
 import { IOSStatusBadge } from '../components/IOSStatusBadge';
 import { IOSProgressIndicator } from '../components/IOSProgressIndicator';
 import { IOSPullToRefresh } from '../components/IOSPullToRefresh';
+import { IOSListItem } from '../components/IOSListItem';
+import { IOSMetricCard } from '../components/IOSMetricCard';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -207,204 +209,289 @@ export const Dashboard: React.FC = () => {
         onDismiss={handleDismissNotification}
       />
 
-        {/* Status Summary Section */}
-        <IOSSection title="Status Summary">
-          <Box sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 600 }}>
-                Sync Status
-              </Typography>
+        {/* Sync Status Section - iOS Grouped List Format */}
+        <IOSSection title="Sync Status">
+          <IOSListItem
+            leftIcon={
+              <Box sx={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: '50%', 
+                backgroundColor: syncStatus.data?.status === 'syncing' ? '#007AFF' : 
+                               syncStatus.data?.status === 'error' ? '#FF3B30' :
+                               syncStatus.data?.status === 'success' ? '#34C759' : '#8E8E93',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <PlayArrow sx={{ color: 'white', fontSize: '18px' }} />
+              </Box>
+            }
+            rightContent={
               <IOSStatusBadge
                 status={syncStatus.data?.status === 'syncing' ? 'syncing' : 
                        syncStatus.data?.status === 'error' ? 'error' :
                        syncStatus.data?.status === 'success' ? 'success' : 'inactive'}
                 text={syncStatus.data?.status || 'idle'}
                 animated={syncStatus.data?.status === 'syncing'}
+                variant="minimal"
+                size="small"
               />
-            </Box>
-            
-            {syncStatus.data?.progress !== undefined && (
-              <IOSProgressIndicator
-                progress={syncStatus.data.progress}
-                variant="linear"
-                showLabel={true}
-                label="Sync Progress"
-                sx={{ mb: 2 }}
-              />
-            )}
-            
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {syncStatus.data?.message || 'Ready to sync'}
-            </Typography>
-            
-            {syncStatus.data?.lastSync && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Last sync: {formatTimeAgo(syncStatus.data.lastSync)}
+            }
+            showDisclosure={true}
+            onClick={() => navigate('/sync-status')}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400, mb: 0.5 }}>
+                Synchronization
               </Typography>
-            )}
-            
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <IOSButton
-                variant="primary"
-                onClick={() => syncMutation.mutate()}
-                disabled={syncMutation.isPending || syncStatus.data?.status === 'syncing'}
-                fullWidth={{ xs: true, sm: false }}
-              >
-                {syncMutation.isPending ? 'Syncing...' : 'Sync Now'}
-              </IOSButton>
-              <IOSButton
-                variant="secondary"
-                onClick={() => navigate('/sync-status')}
-                fullWidth={{ xs: true, sm: false }}
-              >
-                View Details
-              </IOSButton>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '15px', mb: 1 }}>
+                {syncStatus.data?.message || 'Ready to sync'}
+              </Typography>
+              {syncStatus.data?.progress !== undefined && (
+                <IOSProgressIndicator
+                  progress={syncStatus.data.progress}
+                  variant="linear"
+                  size="small"
+                  showLabel={false}
+                />
+              )}
+              {syncStatus.data?.lastSync && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px', mt: 0.5, display: 'block' }}>
+                  Last sync: {formatTimeAgo(syncStatus.data.lastSync)}
+                </Typography>
+              )}
             </Box>
-          </Box>
+          </IOSListItem>
+          
+          <IOSListItem
+            leftIcon={<PlayArrow sx={{ color: '#007AFF', fontSize: '20px' }} />}
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending || syncStatus.data?.status === 'syncing'}
+            divider={false}
+          >
+            <Typography variant="body1" sx={{ 
+              fontSize: '17px', 
+              fontWeight: 400,
+              color: syncMutation.isPending || syncStatus.data?.status === 'syncing' ? 'text.disabled' : '#007AFF'
+            }}>
+              {syncMutation.isPending ? 'Syncing...' : 'Sync Now'}
+            </Typography>
+          </IOSListItem>
         </IOSSection>
 
-        {/* Account Mappings Section */}
+        {/* Account Mappings Section - iOS Grouped List Format */}
         <IOSSection title="Account Mappings">
-          <Box 
-            sx={{ p: 2, cursor: 'pointer' }}
+          <IOSListItem
+            leftIcon={
+              <Box sx={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: '50%', 
+                backgroundColor: '#007AFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <AccountTree sx={{ color: 'white', fontSize: '18px' }} />
+              </Box>
+            }
+            rightContent={
+              mappingStats.isLoading ? (
+                <CircularProgress size={20} />
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '15px' }}>
+                  {mappingStats.data?.percentage || 0}%
+                </Typography>
+              )
+            }
+            showDisclosure={true}
             onClick={() => navigate('/account-mappings')}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 600 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400, mb: 0.5 }}>
                 Account Mappings
               </Typography>
-              <AccountTree color="primary" />
-            </Box>
-            
-            {mappingStats.isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : (
-              <>
-                <IOSProgressIndicator
-                  progress={mappingStats.data?.percentage || 0}
-                  variant="linear"
-                  showLabel={true}
-                  label={`${mappingStats.data?.mapped || 0} of ${mappingStats.data?.total || 0} accounts mapped`}
-                />
-                
-                {mappingStats.data && mappingStats.data.unmapped > 0 && (
-                  <IOSStatusBadge
-                    status="warning"
-                    text={`${mappingStats.data.unmapped} accounts need mapping`}
-                    variant="filled"
-                    sx={{ mt: 2 }}
-                  />
-                )}
-              </>
-            )}
-          </Box>
-        </IOSSection>
-
-        {/* Balance Comparison Section */}
-        <IOSSection title="Balance Comparison">
-          <Box 
-            sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() => navigate('/balance-comparison')}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 600 }}>
-                Balance Comparison
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '15px', mb: 1 }}>
+                {mappingStats.data ? 
+                  `${mappingStats.data.mapped || 0} of ${mappingStats.data.total || 0} accounts mapped` :
+                  'Configure account mappings'
+                }
               </Typography>
-              <AccountBalance color="primary" />
+              {!mappingStats.isLoading && mappingStats.data && (
+                <IOSProgressIndicator
+                  progress={mappingStats.data.percentage || 0}
+                  variant="linear"
+                  size="small"
+                  showLabel={false}
+                  color={mappingStats.data.percentage === 100 ? 'success' : 'primary'}
+                />
+              )}
             </Box>
-            
-            {balanceDiscrepancies.isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : balanceDiscrepancies.error ? (
-              <IOSStatusBadge
-                status="error"
-                text="Unable to load balance data"
-                variant="filled"
-              />
-            ) : balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? (
-              <>
+          </IOSListItem>
+          
+          {!mappingStats.isLoading && mappingStats.data && mappingStats.data.unmapped > 0 && (
+            <IOSListItem
+              leftIcon={<Settings sx={{ color: '#FF9500', fontSize: '20px' }} />}
+              rightContent={
                 <IOSStatusBadge
                   status="warning"
-                  text={`${balanceDiscrepancies.data.length} discrepancies found`}
+                  text={`${mappingStats.data.unmapped}`}
                   variant="filled"
+                  size="small"
                 />
-                
-                {balanceDiscrepancies.data.slice(0, 2).map((discrepancy, index) => (
-                  <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, mt: index === 0 ? 2 : 0 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {discrepancy.accountName}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {discrepancy.difference > 0 ? <TrendingUp color="error" /> : <TrendingDown color="success" />}
-                      <Typography variant="body2" color={discrepancy.difference > 0 ? 'error.main' : 'success.main'}>
-                        {formatCurrency(Math.abs(discrepancy.difference), discrepancy.currency)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </>
-            ) : (
-              <IOSStatusBadge
-                status="success"
-                text="All balances match perfectly"
-                variant="filled"
-              />
-            )}
-          </Box>
+              }
+              onClick={() => navigate('/account-mappings')}
+              divider={false}
+            >
+              <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400 }}>
+                Configure Unmapped Accounts
+              </Typography>
+            </IOSListItem>
+          )}
         </IOSSection>
 
-        {/* Key Metrics Section */}
-        <IOSSection title="Key Metrics">
-          <Box sx={{ p: 2 }}>
-            {metrics.isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress size={24} />
+        {/* Balance Comparison Section - iOS Grouped List Format */}
+        <IOSSection title="Balance Comparison">
+          <IOSListItem
+            leftIcon={
+              <Box sx={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: '50%', 
+                backgroundColor: balanceDiscrepancies.error ? '#FF3B30' :
+                               balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? '#FF9500' : '#34C759',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <AccountBalance sx={{ color: 'white', fontSize: '18px' }} />
               </Box>
-            ) : (
-              <Grid container spacing={3}>
-                <Grid item xs={6} sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="primary" sx={{ fontSize: '28px', fontWeight: 700 }}>
-                    {metrics.data?.totalAccounts || 0}
+            }
+            rightContent={
+              balanceDiscrepancies.isLoading ? (
+                <CircularProgress size={20} />
+              ) : balanceDiscrepancies.error ? (
+                <IOSStatusBadge
+                  status="error"
+                  text="Error"
+                  variant="minimal"
+                  size="small"
+                />
+              ) : balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? (
+                <IOSStatusBadge
+                  status="warning"
+                  text={`${balanceDiscrepancies.data.length}`}
+                  variant="filled"
+                  size="small"
+                />
+              ) : (
+                <IOSStatusBadge
+                  status="success"
+                  text="✓"
+                  variant="minimal"
+                  size="small"
+                />
+              )
+            }
+            showDisclosure={true}
+            onClick={() => navigate('/balance-comparison')}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400, mb: 0.5 }}>
+                Balance Comparison
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '15px' }}>
+                {balanceDiscrepancies.isLoading ? 'Loading balance data...' :
+                 balanceDiscrepancies.error ? 'Unable to load balance data' :
+                 balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 ? 
+                   `${balanceDiscrepancies.data.length} discrepancies found` :
+                   'All balances match perfectly'
+                }
+              </Typography>
+            </Box>
+          </IOSListItem>
+          
+          {/* Show top discrepancies as separate list items */}
+          {!balanceDiscrepancies.isLoading && !balanceDiscrepancies.error && 
+           balanceDiscrepancies.data && balanceDiscrepancies.data.length > 0 && (
+            <>
+              {balanceDiscrepancies.data.slice(0, 2).map((discrepancy, index) => (
+                <IOSListItem
+                  key={index}
+                  leftIcon={
+                    discrepancy.difference > 0 ? 
+                      <TrendingUp sx={{ color: '#FF3B30', fontSize: '20px' }} /> : 
+                      <TrendingDown sx={{ color: '#34C759', fontSize: '20px' }} />
+                  }
+                  rightContent={
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontSize: '15px',
+                        fontWeight: 600,
+                        color: discrepancy.difference > 0 ? '#FF3B30' : '#34C759'
+                      }}
+                    >
+                      {formatCurrency(Math.abs(discrepancy.difference), discrepancy.currency)}
+                    </Typography>
+                  }
+                  onClick={() => navigate('/balance-comparison')}
+                  divider={index < 1}
+                >
+                  <Typography variant="body1" sx={{ fontSize: '17px', fontWeight: 400 }}>
+                    {discrepancy.accountName}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
-                    Total Accounts
-                  </Typography>
+                </IOSListItem>
+              ))}
+            </>
+          )}
+        </IOSSection>
+
+        {/* Key Metrics Section - iOS Style Metric Cards */}
+        <IOSSection title="Key Metrics">
+          {metrics.isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Box sx={{ p: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <IOSMetricCard
+                    value={metrics.data?.totalAccounts || 0}
+                    label="Total Accounts"
+                    color="primary"
+                    icon={<AccountTree sx={{ fontSize: '24px' }} />}
+                  />
                 </Grid>
-                <Grid item xs={6} sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="success.main" sx={{ fontSize: '28px', fontWeight: 700 }}>
-                    {metrics.data?.successRate || 0}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
-                    Success Rate
-                  </Typography>
+                <Grid item xs={6}>
+                  <IOSMetricCard
+                    value={`${metrics.data?.successRate || 0}%`}
+                    label="Success Rate"
+                    color="success"
+                    icon={<TrendingUp sx={{ fontSize: '24px' }} />}
+                  />
                 </Grid>
-                <Grid item xs={6} sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="info.main" sx={{ fontSize: '28px', fontWeight: 700 }}>
-                    {metrics.data?.avgSyncTime || 0}s
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
-                    Avg Sync Time
-                  </Typography>
+                <Grid item xs={6}>
+                  <IOSMetricCard
+                    value={`${metrics.data?.avgSyncTime || 0}s`}
+                    label="Avg Sync Time"
+                    color="info"
+                    icon={<PlayArrow sx={{ fontSize: '24px' }} />}
+                  />
                 </Grid>
-                <Grid item xs={6} sx={{ textAlign: 'center' }}>
-                  <Typography 
-                    variant="h4" 
-                    color={metrics.data && metrics.data.dataFreshness > 30 ? 'warning.main' : 'success.main'}
-                    sx={{ fontSize: '28px', fontWeight: 700 }}
-                  >
-                    {metrics.data?.dataFreshness || 0}m
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '13px' }}>
-                    Data Age
-                  </Typography>
+                <Grid item xs={6}>
+                  <IOSMetricCard
+                    value={`${metrics.data?.dataFreshness || 0}m`}
+                    label="Data Age"
+                    color={metrics.data && metrics.data.dataFreshness > 30 ? 'warning' : 'success'}
+                    subtitle={metrics.data && metrics.data.dataFreshness > 30 ? 'Consider refreshing' : 'Up to date'}
+                  />
                 </Grid>
               </Grid>
-            )}
-          </Box>
+            </Box>
+          )}
         </IOSSection>
 
         {/* Recent Activity Section */}
