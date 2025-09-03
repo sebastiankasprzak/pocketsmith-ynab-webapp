@@ -1,0 +1,209 @@
+import React, { ReactNode, useEffect, useState, useRef } from 'react';
+import { Box, Typography, IconButton, useTheme } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useIOSDetection } from '../hooks/useIOSDetection';
+
+interface IOSNavigationBarProps {
+  title: string;
+  leftAction?: ReactNode;
+  rightAction?: ReactNode;
+  large?: boolean;
+  onBack?: () => void;
+  scrollElement?: HTMLElement | null;
+  collapseThreshold?: number;
+}
+
+export const IOSNavigationBar = ({
+  title,
+  leftAction,
+  rightAction,
+  large = false,
+  onBack,
+  scrollElement,
+  collapseThreshold = 44
+}: IOSNavigationBarProps) => {
+  const theme = useTheme();
+  const { selection } = useHapticFeedback();
+  const { capabilities } = useIOSDetection();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const navRef = useRef<HTMLDivElement>(null);
+
+  const isDark = theme.palette.mode === 'dark';
+
+  // Handle scroll-based collapse for large titles
+  useEffect(() => {
+    if (!large || !scrollElement) return;
+
+    const handleScroll = () => {
+      const currentScrollY = scrollElement.scrollTop;
+      setScrollY(currentScrollY);
+      
+      // Collapse when scrolled past threshold
+      const shouldCollapse = currentScrollY > collapseThreshold;
+      if (shouldCollapse !== isCollapsed) {
+        setIsCollapsed(shouldCollapse);
+      }
+    };
+
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollElement.removeEventListener('scroll', handleScroll);
+  }, [large, scrollElement, collapseThreshold, isCollapsed]);
+
+  const handleBackPress = () => {
+    selection();
+    onBack?.();
+  };
+
+  const getNavigationBarHeight = () => {
+    if (large && !isCollapsed) {
+      return capabilities.hasNotch || capabilities.hasDynamicIsland ? 140 : 120;
+    }
+    return capabilities.hasNotch || capabilities.hasDynamicIsland ? 88 : 68;
+  };
+
+  const getTitleOpacity = () => {
+    if (!large) return 1;
+    if (isCollapsed) return 1;
+    
+    // Fade out large title as user scrolls
+    const fadeStart = 20;
+    const fadeEnd = collapseThreshold;
+    if (scrollY <= fadeStart) return 1;
+    if (scrollY >= fadeEnd) return 0;
+    return 1 - ((scrollY - fadeStart) / (fadeEnd - fadeStart));
+  };
+
+  const getSmallTitleOpacity = () => {
+    if (!large) return 1;
+    if (!isCollapsed) return 0;
+    
+    // Fade in small title when collapsed
+    const fadeStart = collapseThreshold - 10;
+    const fadeEnd = collapseThreshold + 10;
+    if (scrollY <= fadeStart) return 0;
+    if (scrollY >= fadeEnd) return 1;
+    return (scrollY - fadeStart) / (fadeEnd - fadeStart);
+  };
+
+  return (
+    <Box
+      ref={navRef}
+      sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: theme.zIndex.appBar,
+        backgroundColor: isDark 
+          ? 'rgba(28, 28, 30, 0.8)' 
+          : 'rgba(248, 248, 248, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: `0.5px solid ${isDark ? 'rgba(84, 84, 88, 0.6)' : 'rgba(60, 60, 67, 0.29)'}`,
+        height: getNavigationBarHeight(),
+        transition: 'height 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+        display: 'flex',
+        flexDirection: 'column',
+        paddingTop: capabilities.hasNotch || capabilities.hasDynamicIsland 
+          ? 'env(safe-area-inset-top, 44px)' 
+          : '20px',
+      }}
+    >
+      {/* Standard Navigation Bar */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: 44,
+          px: 2,
+          minHeight: 44,
+        }}
+      >
+        {/* Left Action */}
+        <Box sx={{ minWidth: 44, display: 'flex', justifyContent: 'flex-start' }}>
+          {leftAction || (onBack && (
+            <IconButton
+              onClick={handleBackPress}
+              size="small"
+              sx={{
+                color: theme.palette.primary.main,
+                p: 1,
+                '&:active': {
+                  opacity: 0.3,
+                  transform: 'scale(0.96)',
+                },
+              }}
+            >
+              <ArrowBack />
+            </IconButton>
+          ))}
+        </Box>
+
+        {/* Center Title (for standard nav bar) */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'center',
+            opacity: large ? getSmallTitleOpacity() : 1,
+            transition: 'opacity 0.2s ease-in-out',
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: '17px',
+              fontWeight: 600,
+              color: isDark ? '#FFFFFF' : '#000000',
+              textAlign: 'center',
+              maxWidth: '60%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
+
+        {/* Right Action */}
+        <Box sx={{ minWidth: 44, display: 'flex', justifyContent: 'flex-end' }}>
+          {rightAction}
+        </Box>
+      </Box>
+
+      {/* Large Title (when enabled) */}
+      {large && (
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'flex-end',
+            px: 2,
+            pb: 1,
+            opacity: getTitleOpacity(),
+            transition: 'opacity 0.2s ease-in-out',
+            transform: `translateY(${Math.min(scrollY * 0.5, 20)}px)`,
+          }}
+        >
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: '34px',
+              fontWeight: 700,
+              lineHeight: '41px',
+              color: isDark ? '#FFFFFF' : '#000000',
+              fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+              letterSpacing: '0.37px',
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default IOSNavigationBar;

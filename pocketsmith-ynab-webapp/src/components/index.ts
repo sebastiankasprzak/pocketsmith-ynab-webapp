@@ -12,6 +12,11 @@ export { IOSPicker } from './IOSPicker';
 export { IOSSegmentedControl } from './IOSSegmentedControl';
 export { IOSToggle } from './IOSToggle';
 
+// iOS Navigation Components
+export { IOSNavigationBar } from './IOSNavigationBar';
+export { IOSTabBar } from './IOSTabBar';
+export { IOSNavigationDemo } from './IOSNavigationDemo';
+
 // iOS-specific components - Phase 2 Advanced
 export { IOSContextMenu } from './IOSContextMenu';
 export { IOSBottomSheet } from './IOSBottomSheet';
