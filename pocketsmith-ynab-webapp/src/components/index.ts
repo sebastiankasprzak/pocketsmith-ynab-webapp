@@ -1,45 +1,48 @@
-// iOS-specific components - Phase 1
-export { IOSLayout, useIOSDetection } from './IOSLayout';
-export { IOSCard } from './IOSCard';
-export { IOSButton } from './IOSButton';
-export { IOSActionSheet } from './IOSActionSheet';
-export { IOSPullToRefresh } from './IOSPullToRefresh';
-export { IOSSwipeableCard } from './IOSSwipeableCard';
+// Export existing components
+export * from './ErrorBoundary';
+export * from './Layout';
+export * from './Navigation';
+export * from './LoginForm';
+export * from './LoginPage';
+export * from './ProtectedRoute';
+export * from './UserMenu';
+export * from './UserProfile';
+export * from './LoadingStates';
+export * from './StatusIndicator';
+export * from './ToastNotifications';
+export * from './PWAInstallPrompt';
+export * from './PWAUpdatePrompt';
+export * from './QueryErrorBoundary';
+export * from './AppInitializer';
+export * from './AuthErrorHandler';
+export * from './ApiErrorDisplay';
+export * from './DashboardNotifications';
+export * from './SkipLinks';
 
-// iOS Form Components
-export { IOSTextField } from './IOSTextField';
-export { IOSPicker } from './IOSPicker';
-export { IOSSegmentedControl } from './IOSSegmentedControl';
-export { IOSToggle } from './IOSToggle';
+// Export iOS-specific components
+export * from './IOSErrorBoundary';
+export * from './IOSFallbackComponents';
+export * from './IOSProgressiveEnhancement';
 
-// iOS Navigation Components
-export { IOSNavigationBar } from './IOSNavigationBar';
-export { IOSTabBar } from './IOSTabBar';
-export { IOSNavigationDemo } from './IOSNavigationDemo';
-
-// iOS-specific components - Phase 2 Advanced
-export { IOSContextMenu } from './IOSContextMenu';
-export { IOSBottomSheet } from './IOSBottomSheet';
-export { IOSSearchBar } from './IOSSearchBar';
-export { IOSNotification, useIOSNotifications } from './IOSNotification';
-
-// iOS Feedback Components
-export { IOSProgressIndicator } from './IOSProgressIndicator';
-export { IOSStatusBadge } from './IOSStatusBadge';
-
-// iOS Loading States
-export { 
-  IOSSpinner,
-  IOSSkeleton,
-  IOSLoadingOverlay,
-  IOSProgressBar,
-  IOSPulsingDot
-} from './IOSLoadingStates';
-
-// Re-export existing components for convenience
-export { Layout } from './Layout';
-export { Navigation } from './Navigation';
-export { ErrorBoundary } from './ErrorBoundary';
-export { ProtectedRoute } from './ProtectedRoute';
-export { PWAInstallPrompt } from './PWAInstallPrompt';
-export { PWAUpdatePrompt } from './PWAUpdatePrompt';
+// Export iOS components
+export * from './IOSButton';
+export * from './IOSCard';
+export * from './IOSSection';
+export * from './IOSListItem';
+export * from './IOSTextField';
+export * from './IOSPicker';
+export * from './IOSSegmentedControl';
+export * from './IOSToggle';
+export * from './IOSNavigationBar';
+export * from './IOSTabBar';
+export * from './IOSActionSheet';
+export * from './IOSBottomSheet';
+export * from './IOSProgressIndicator';
+export * from './IOSStatusBadge';
+export * from './IOSNotification';
+export * from './IOSLoadingStates';
+export * from './IOSLayout';
+export * from './IOSContextMenu';
+export * from './IOSSearchBar';
+export * from './IOSSwipeableCard';
+export * from './IOSPullToRefresh';
