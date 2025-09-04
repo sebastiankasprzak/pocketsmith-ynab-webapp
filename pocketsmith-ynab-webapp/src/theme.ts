@@ -153,6 +153,25 @@ export const theme = createTheme({
       },
     },
     MuiSelect: {
+      defaultProps: {
+        // Override default MenuProps to prevent scroll issues
+        MenuProps: {
+          disableScrollLock: true,
+          anchorOrigin: {
+            vertical: 'bottom',
+            horizontal: 'left',
+          },
+          transformOrigin: {
+            vertical: 'top',
+            horizontal: 'left',
+          },
+          PaperProps: {
+            style: {
+              maxHeight: 300,
+            },
+          },
+        },
+      },
       styleOverrides: {
         select: {
           minHeight: '44px', // Accessibility: minimum touch target size
@@ -174,6 +193,27 @@ export const theme = createTheme({
             },
           },
         },
+      },
+    },
+    MuiPopover: {
+      defaultProps: {
+        // Disable scroll-based repositioning to prevent scrollTop errors
+        disableScrollLock: true,
+      },
+      styleOverrides: {
+        root: {
+          // Ensure popover doesn't interfere with scroll handling
+          '& .MuiBackdrop-root': {
+            // Prevent backdrop from interfering with scroll events
+            pointerEvents: 'none',
+          },
+        },
+      },
+    },
+    MuiMenu: {
+      defaultProps: {
+        // Disable scroll lock for Menu components (which use Popover internally)
+        disableScrollLock: true,
       },
     },
   },

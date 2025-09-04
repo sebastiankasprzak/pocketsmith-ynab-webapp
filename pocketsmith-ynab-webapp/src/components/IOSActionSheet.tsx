@@ -1,17 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  Dialog,
-  DialogContent,
-  List,
-  ListItem,
-  ListItemText,
-  Button,
   Box,
   Typography,
-  Slide,
   useTheme
 } from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSActionSheetAction {
@@ -30,15 +23,6 @@ interface IOSActionSheetProps {
   cancelLabel?: string;
 }
 
-const SlideUpTransition = React.forwardRef(function Transition(
-  props: TransitionProps & {
-    children: React.ReactElement;
-  },
-  ref: React.Ref<unknown>,
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
-
 export const IOSActionSheet = ({
   open,
   onClose,
@@ -51,42 +35,85 @@ export const IOSActionSheet = ({
   const { selection } = useHapticFeedback();
   const isDark = theme.palette.mode === 'dark';
 
+  // Prevent body scroll when open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, [open]);
+
   const handleActionPress = (action: IOSActionSheetAction) => {
-    selection();
+    if (selection) {
+      selection();
+    }
     action.onPress();
     onClose();
   };
 
   const handleCancel = () => {
-    selection();
+    if (selection) {
+      selection();
+    }
     onClose();
   };
 
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      TransitionComponent={SlideUpTransition}
+  if (!open) return null;
+
+  return createPortal(
+    <Box
       sx={{
-        '& .MuiDialog-container': {
-          alignItems: 'flex-end',
-        },
-        '& .MuiDialog-paper': {
-          margin: 0,
-          width: '100%',
-          maxWidth: '100%',
-          borderRadius: '16px 16px 0 0',
-          backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7',
-        },
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 10001,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        padding: '0 8px 8px 8px',
       }}
+      onClick={onClose}
     >
-      <DialogContent sx={{ p: 0 }}>
+      <Box
+        onClick={(e) => e.stopPropagation()}
+        sx={{
+          width: '100%',
+          maxWidth: '400px',
+          backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          animation: 'slideUp 0.3s ease-out',
+          '@keyframes slideUp': {
+            '0%': {
+              transform: 'translateY(100%)',
+              opacity: 0,
+            },
+            '100%': {
+              transform: 'translateY(0)',
+              opacity: 1,
+            },
+          },
+        }}
+      >
         {/* Header */}
         {(title || message) && (
           <Box sx={{ p: 2, textAlign: 'center', borderBottom: `0.5px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` }}>
             {title && (
               <Typography 
-                variant="h6" 
                 sx={{ 
                   fontSize: '13px',
                   fontWeight: 600,
@@ -100,7 +127,6 @@ export const IOSActionSheet = ({
             )}
             {message && (
               <Typography 
-                variant="body2" 
                 sx={{ 
                   mt: title ? 1 : 0,
                   fontSize: '13px',
@@ -115,70 +141,73 @@ export const IOSActionSheet = ({
         )}
 
         {/* Actions */}
-        <List sx={{ p: 0 }}>
+        <Box>
           {actions.map((action, index) => (
-            <ListItem
+            <Box
               key={index}
+              onClick={() => !action.disabled && handleActionPress(action)}
               sx={{
-                p: 0,
+                minHeight: 56,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 borderBottom: index < actions.length - 1 ? `0.5px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` : 'none',
+                fontSize: '20px',
+                fontWeight: action.destructive ? 600 : 400,
+                color: action.destructive 
+                  ? '#FF3B30' 
+                  : action.disabled 
+                    ? (isDark ? '#48484A' : '#C7C7CC')
+                    : '#007AFF',
+                backgroundColor: 'transparent',
+                cursor: action.disabled ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s ease',
+                '&:hover': {
+                  backgroundColor: action.disabled ? 'transparent' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
+                },
+                '&:active': {
+                  backgroundColor: action.disabled ? 'transparent' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'),
+                  transform: action.disabled ? 'none' : 'scale(0.98)',
+                },
               }}
             >
-              <Button
-                fullWidth
-                onClick={() => handleActionPress(action)}
-                disabled={action.disabled}
-                sx={{
-                  minHeight: 56,
-                  borderRadius: 0,
-                  fontSize: '20px',
-                  fontWeight: action.destructive ? 600 : 400,
-                  color: action.destructive 
-                    ? '#FF3B30' 
-                    : action.disabled 
-                      ? (isDark ? '#48484A' : '#C7C7CC')
-                      : '#007AFF',
-                  backgroundColor: 'transparent',
-                  '&:hover': {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                  },
-                  '&:active': {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                  },
-                }}
-              >
-                {action.label}
-              </Button>
-            </ListItem>
+              {action.label}
+            </Box>
           ))}
-        </List>
+        </Box>
 
         {/* Cancel Button */}
         <Box sx={{ p: 1 }}>
-          <Button
-            fullWidth
+          <Box
             onClick={handleCancel}
             sx={{
               minHeight: 56,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               borderRadius: '12px',
               fontSize: '20px',
               fontWeight: 600,
               color: '#007AFF',
               backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
               border: `0.5px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
               '&:hover': {
                 backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
               },
               '&:active': {
                 backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA',
+                transform: 'scale(0.98)',
               },
             }}
           >
             {cancelLabel}
-          </Button>
+          </Box>
         </Box>
-      </DialogContent>
-    </Dialog>
+      </Box>
+    </Box>,
+    document.body
   );
 };
 

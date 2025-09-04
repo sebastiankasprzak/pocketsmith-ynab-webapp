@@ -124,7 +124,7 @@
   - Create iOS-style floating action button for adding mappings
   - _Requirements: 2.1, 2.6, 8.3_
 
-- [ ] 13. Redesign Mapping Creation Flow
+- [x] 13. Redesign Mapping Creation Flow
   - Convert new mapping dialog to iOS-style modal presentation
   - Replace Material-UI dropdowns with iOS-style picker controls
   - Implement iOS-style form validation with proper error states

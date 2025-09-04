@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState, useRef } from 'react';
+import React, { type ReactNode, useEffect, useState, useRef } from 'react';
 import { Box, Typography, IconButton, useTheme } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -12,6 +12,7 @@ interface IOSNavigationBarProps {
   onBack?: () => void;
   scrollElement?: HTMLElement | null;
   collapseThreshold?: number;
+  scrollContainerRef?: React.RefObject<HTMLElement>;
 }
 
 export const IOSNavigationBar = ({
@@ -21,7 +22,8 @@ export const IOSNavigationBar = ({
   large = false,
   onBack,
   scrollElement,
-  collapseThreshold = 44
+  collapseThreshold = 44,
+  scrollContainerRef
 }: IOSNavigationBarProps) => {
   const theme = useTheme();
   const { selection } = useHapticFeedback();
@@ -34,22 +36,130 @@ export const IOSNavigationBar = ({
 
   // Handle scroll-based collapse for large titles
   useEffect(() => {
-    if (!large || !scrollElement) return;
+    if (!large) return;
 
-    const handleScroll = () => {
-      const currentScrollY = scrollElement.scrollTop;
-      setScrollY(currentScrollY);
+    let isMounted = true;
+    let scrollHandler: ((event: Event) => void) | null = null;
+    let targetElement: HTMLElement | Window | null = null;
+
+    const safeScrollHandler = (event: Event) => {
+      // Early return if component is unmounted
+      if (!isMounted) return;
       
-      // Collapse when scrolled past threshold
-      const shouldCollapse = currentScrollY > collapseThreshold;
-      if (shouldCollapse !== isCollapsed) {
-        setIsCollapsed(shouldCollapse);
+      try {
+        let currentScrollY = 0;
+        
+        // Get the current target element each time to avoid stale references
+        const currentTarget = scrollContainerRef?.current || scrollElement || window;
+        
+        if (currentTarget === window) {
+          // Use window scroll position
+          try {
+            currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+          } catch (windowError) {
+            // Fallback if window properties are not available
+            currentScrollY = 0;
+          }
+        } else if (currentTarget) {
+          // Safely check if it's an HTMLElement with scrollTop
+          try {
+            // Multiple layers of safety checks
+            if (
+              currentTarget && 
+              typeof currentTarget === 'object' && 
+              currentTarget !== null && 
+              !currentTarget.hasOwnProperty || // Check if it's not a detached node
+              (currentTarget as any).nodeType === 1 // Ensure it's an element node
+            ) {
+              // Check if scrollTop exists and is accessible
+              const scrollTopDescriptor = Object.getOwnPropertyDescriptor(currentTarget, 'scrollTop') ||
+                                        Object.getOwnPropertyDescriptor(Object.getPrototypeOf(currentTarget), 'scrollTop');
+              
+              if (scrollTopDescriptor && typeof (currentTarget as any).scrollTop === 'number') {
+                currentScrollY = (currentTarget as HTMLElement).scrollTop;
+              } else {
+                // Try alternative scroll position methods
+                if ('scrollingElement' in document && document.scrollingElement) {
+                  currentScrollY = document.scrollingElement.scrollTop || 0;
+                } else {
+                  currentScrollY = document.documentElement.scrollTop || document.body.scrollTop || 0;
+                }
+              }
+            }
+          } catch (elementError) {
+            // Element might have been removed from DOM, use document scroll as fallback
+            try {
+              currentScrollY = document.documentElement.scrollTop || document.body.scrollTop || 0;
+            } catch (docError) {
+              currentScrollY = 0;
+            }
+          }
+        }
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setScrollY(currentScrollY);
+          
+          // Collapse when scrolled past threshold
+          const shouldCollapse = currentScrollY > collapseThreshold;
+          if (shouldCollapse !== isCollapsed) {
+            setIsCollapsed(shouldCollapse);
+          }
+        }
+      } catch (error) {
+        console.warn('IOSNavigationBar scroll handler error:', error);
+        // Gracefully handle the error without breaking the component
+        // Disable further scroll handling if errors persist
+        if (scrollHandler && targetElement) {
+          try {
+            if (targetElement === window) {
+              window.removeEventListener('scroll', scrollHandler);
+            } else if (targetElement && 'removeEventListener' in targetElement) {
+              (targetElement as HTMLElement).removeEventListener('scroll', scrollHandler);
+            }
+          } catch (removeError) {
+            // Ignore cleanup errors
+          }
+          scrollHandler = null;
+          targetElement = null;
+        }
       }
     };
 
-    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-    return () => scrollElement.removeEventListener('scroll', handleScroll);
-  }, [large, scrollElement, collapseThreshold, isCollapsed]);
+    // Store the handler reference for cleanup
+    scrollHandler = safeScrollHandler;
+    
+    // Determine the target element for scroll listening
+    targetElement = scrollContainerRef?.current || scrollElement || window;
+    
+    // Add event listener with proper error handling
+    try {
+      if (targetElement === window) {
+        window.addEventListener('scroll', scrollHandler, { passive: true });
+      } else if (targetElement && 'addEventListener' in targetElement) {
+        (targetElement as HTMLElement).addEventListener('scroll', scrollHandler, { passive: true });
+      }
+    } catch (error) {
+      console.warn('Failed to add scroll listener:', error);
+      scrollHandler = null;
+      targetElement = null;
+    }
+
+    return () => {
+      isMounted = false;
+      if (scrollHandler && targetElement) {
+        try {
+          if (targetElement === window) {
+            window.removeEventListener('scroll', scrollHandler);
+          } else if (targetElement && 'removeEventListener' in targetElement) {
+            (targetElement as HTMLElement).removeEventListener('scroll', scrollHandler);
+          }
+        } catch (error) {
+          console.warn('Failed to remove scroll listener:', error);
+        }
+      }
+    };
+  }, [large, scrollElement, scrollContainerRef, collapseThreshold, isCollapsed]);
 
   const handleBackPress = () => {
     selection();

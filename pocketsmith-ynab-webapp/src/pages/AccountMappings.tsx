@@ -10,7 +10,6 @@ import {
   CircularProgress,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Dialog,
   DialogTitle,
@@ -27,6 +26,7 @@ import {
   alpha,
   Fab,
 } from '@mui/material';
+import { SafeSelect } from '../components/SafeSelect';
 import {
   Add as AddIcon,
   Refresh as RefreshIcon,
@@ -41,6 +41,7 @@ import { IOSButton } from '../components/IOSButton';
 import { IOSMetricCard } from '../components/IOSMetricCard';
 import { IOSNavigationBar } from '../components/IOSNavigationBar';
 import { IOSFloatingActionButton } from '../components/IOSFloatingActionButton';
+import { IOSMappingCreationModal } from '../components/IOSMappingCreationModal';
 import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useAccounts, useMappings, useSaveMappings, useDeleteMapping, useValidateMappings, useUpdateMappingConfig } from '../hooks/useAccountMappings';
 import { MappingConfigurationCard } from '../components/MappingConfigurationCard';
@@ -137,18 +138,11 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
             </Typography>
             <FormControl fullWidth size="large">
               <InputLabel>PocketSmith Account</InputLabel>
-              <Select
+              <SafeSelect
                 value={pocketsmithAccountId}
                 onChange={(e) => setPocketsmithAccountId(e.target.value)}
                 label="PocketSmith Account"
                 sx={{ minHeight: 56 }}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300,
-                    },
-                  },
-                }}
               >
                 {availablePocketSmithAccounts.map((account) => (
                   <MenuItem key={account.id} value={account.id.toString()}>
@@ -166,7 +160,7 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
                     </Box>
                   </MenuItem>
                 ))}
-              </Select>
+              </SafeSelect>
             </FormControl>
 
             {/* Preview Selected PocketSmith Account */}
@@ -201,18 +195,11 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
             </Typography>
             <FormControl fullWidth size="large">
               <InputLabel>YNAB Account</InputLabel>
-              <Select
+              <SafeSelect
                 value={ynabAccountId}
                 onChange={(e) => setYnabAccountId(e.target.value)}
                 label="YNAB Account"
                 sx={{ minHeight: 56 }}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300,
-                    },
-                  },
-                }}
               >
                 {availableYnabAccounts.map((account) => (
                   <MenuItem key={account.id} value={account.id}>
@@ -230,7 +217,7 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
                     </Box>
                   </MenuItem>
                 ))}
-              </Select>
+              </SafeSelect>
             </FormControl>
 
             {/* Preview Selected YNAB Account */}
@@ -685,8 +672,8 @@ export const AccountMappings: React.FC = () => {
           <AddIcon />
         </IOSFloatingActionButton>
 
-        {/* New Mapping Dialog */}
-        <NewMappingDialog
+        {/* iOS Mapping Creation Modal */}
+        <IOSMappingCreationModal
           open={newMappingDialogOpen}
           onClose={() => setNewMappingDialogOpen(false)}
           onSave={handleAddMapping}

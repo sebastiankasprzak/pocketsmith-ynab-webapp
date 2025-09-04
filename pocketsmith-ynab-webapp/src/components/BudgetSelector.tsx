@@ -3,7 +3,6 @@ import {
   Box,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Typography,
   Alert,
@@ -15,6 +14,7 @@ import {
   DialogActions,
   Snackbar,
 } from '@mui/material';
+import { SafeSelect } from './SafeSelect';
 import {
   AccountBalance as BudgetIcon,
   Check as CheckIcon,
@@ -154,18 +154,11 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
         </Typography>
         <FormControl fullWidth>
           <InputLabel>Select Different YNAB Budget</InputLabel>
-          <Select
+          <SafeSelect
             value=""
             onChange={(e) => handleBudgetSelect(e.target.value)}
             label="Select Different YNAB Budget"
             disabled={updateBudgetMutation.isPending}
-            MenuProps={{
-              PaperProps: {
-                style: {
-                  maxHeight: 300,
-                },
-              },
-            }}
           >
             {budgetsData.budgets.map((budget) => (
               <MenuItem 
@@ -186,7 +179,7 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
                 </Box>
               </MenuItem>
             ))}
-          </Select>
+          </SafeSelect>
         </FormControl>
       </Box>
 

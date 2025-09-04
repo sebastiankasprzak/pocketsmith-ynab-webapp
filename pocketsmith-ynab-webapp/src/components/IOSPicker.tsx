@@ -22,6 +22,8 @@ interface IOSPickerOption {
   value: string;
   disabled?: boolean;
   group?: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
 }
 
 interface IOSPickerProps extends Omit<SelectProps, 'variant' | 'value' | 'onChange'> {
@@ -36,6 +38,8 @@ interface IOSPickerProps extends Omit<SelectProps, 'variant' | 'value' | 'onChan
   searchable?: boolean;
   emptyText?: string;
   groupBy?: boolean;
+  showIcons?: boolean;
+  showSubtitles?: boolean;
 }
 
 export const IOSPicker = ({
@@ -50,6 +54,8 @@ export const IOSPicker = ({
   searchable = false,
   emptyText = 'No options available',
   groupBy = false,
+  showIcons = false,
+  showSubtitles = false,
   disabled = false,
   required = false,
   className = '',
@@ -210,10 +216,23 @@ export const IOSPicker = ({
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'relative',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        userSelect: 'none',
+        pointerEvents: disabled ? 'none' : 'auto',
+        '&:active': {
+          transform: disabled ? 'none' : 'scale(0.98)',
+        },
       }}
     >
-      <Box sx={{ flex: 1 }}>
-        {selectedOption ? selectedOption.label : placeholder}
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+        {showIcons && selectedOption?.icon && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {selectedOption.icon}
+          </Box>
+        )}
+        <Box>
+          {selectedOption ? selectedOption.label : placeholder}
+        </Box>
       </Box>
       <Box
         sx={{
@@ -336,8 +355,14 @@ export const IOSPicker = ({
                     },
                   }}
                 >
+                  {showIcons && option.icon && (
+                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+                      {option.icon}
+                    </Box>
+                  )}
                   <ListItemText
                     primary={option.label}
+                    secondary={showSubtitles && option.subtitle ? option.subtitle : undefined}
                     sx={{
                       '& .MuiListItemText-primary': {
                         fontSize: '17px',
@@ -348,6 +373,14 @@ export const IOSPicker = ({
                           : value === option.value
                             ? (isDark ? '#0A84FF' : '#007AFF')
                             : (isDark ? '#FFFFFF' : '#000000'),
+                      },
+                      '& .MuiListItemText-secondary': {
+                        fontSize: '13px',
+                        fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                        color: option.disabled
+                          ? (isDark ? 'rgba(235, 235, 245, 0.3)' : 'rgba(60, 60, 67, 0.3)')
+                          : (isDark ? 'rgba(235, 235, 245, 0.6)' : 'rgba(60, 60, 67, 0.6)'),
+                        marginTop: '2px',
                       },
                     }}
                   />
@@ -442,11 +475,22 @@ export const IOSPicker = ({
           vertical: 'top',
           horizontal: 'left',
         }}
+        disablePortal={false}
+        sx={{
+          zIndex: 9999, // Higher than IOSBottomSheet (9998)
+        }}
         PaperProps={{
           sx: {
             backgroundColor: 'transparent',
             boxShadow: 'none',
             marginTop: '8px',
+          },
+        }}
+        slotProps={{
+          root: {
+            style: {
+              zIndex: 9999,
+            },
           },
         }}
       >

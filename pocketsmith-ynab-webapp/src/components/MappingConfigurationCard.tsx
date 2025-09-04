@@ -4,7 +4,6 @@ import {
   CardContent,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   FormControlLabel,
   Switch,
@@ -21,6 +20,7 @@ import {
   useTheme,
   alpha,
 } from '@mui/material';
+import { SafeSelect } from './SafeSelect';
 import {
   Save as SaveIcon,
   Settings as SettingsIcon,
@@ -318,18 +318,11 @@ export const MappingConfigurationCard: React.FC<MappingConfigurationCardProps> =
               <Box>
                 <FormControl fullWidth>
                   <InputLabel>Default YNAB Account</InputLabel>
-                  <Select
+                  <SafeSelect
                     value={defaultAccountId}
                     onChange={(e) => setDefaultAccountId(e.target.value)}
                     label="Default YNAB Account"
                     disabled={isLoading || saving}
-                    MenuProps={{
-                      PaperProps: {
-                        style: {
-                          maxHeight: 300,
-                        },
-                      },
-                    }}
                   >
                     <MenuItem value="">
                       <em>No default account</em>
@@ -346,7 +339,7 @@ export const MappingConfigurationCard: React.FC<MappingConfigurationCardProps> =
                         </Box>
                       </MenuItem>
                     ))}
-                  </Select>
+                  </SafeSelect>
                 </FormControl>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                   Transactions from unmapped PocketSmith accounts will be assigned to this account.

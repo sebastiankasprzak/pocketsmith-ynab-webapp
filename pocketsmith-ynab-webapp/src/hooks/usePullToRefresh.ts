@@ -38,7 +38,14 @@ export const usePullToRefresh = (options: PullToRefreshOptions) => {
     if (!enabled || state.isRefreshing) return;
     
     const container = containerRef.current;
-    if (!container || container.scrollTop > 0) return;
+    if (!container) return;
+    
+    try {
+      if (container.scrollTop > 0) return;
+    } catch (error) {
+      // Element might be detached, skip this interaction
+      return;
+    }
 
     startY.current = e.touches[0].clientY;
     isDragging.current = true;
@@ -48,7 +55,18 @@ export const usePullToRefresh = (options: PullToRefreshOptions) => {
     if (!isDragging.current || !enabled || state.isRefreshing) return;
 
     const container = containerRef.current;
-    if (!container || container.scrollTop > 0) {
+    if (!container) {
+      isDragging.current = false;
+      return;
+    }
+    
+    try {
+      if (container.scrollTop > 0) {
+        isDragging.current = false;
+        return;
+      }
+    } catch (error) {
+      // Element might be detached, stop dragging
       isDragging.current = false;
       return;
     }
@@ -109,14 +127,25 @@ export const usePullToRefresh = (options: PullToRefreshOptions) => {
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    try {
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+      container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    } catch (error) {
+      console.warn('Failed to add touch listeners:', error);
+      return;
+    }
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
+      try {
+        if (container) {
+          container.removeEventListener('touchstart', handleTouchStart);
+          container.removeEventListener('touchmove', handleTouchMove);
+          container.removeEventListener('touchend', handleTouchEnd);
+        }
+      } catch (error) {
+        console.warn('Failed to remove touch listeners:', error);
+      }
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 

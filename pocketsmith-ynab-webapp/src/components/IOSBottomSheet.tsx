@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useState } from 'react';
-import { Box, Portal, Backdrop, Typography, IconButton } from '@mui/material';
+import { Box, Portal, Typography, IconButton } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -58,15 +58,21 @@ export const IOSBottomSheet = ({
 
   useEffect(() => {
     if (open) {
-      // Prevent body scroll when sheet is open
+      // Prevent body scroll when sheet is open - iOS specific
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
       triggerHaptic('light');
     } else {
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
     }
 
     return () => {
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
     };
   }, [open, triggerHaptic]);
 
@@ -74,10 +80,14 @@ export const IOSBottomSheet = ({
 
   return (
     <Portal>
-      <Backdrop
-        open={open}
+      <Box
         onClick={handleClose}
         sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           zIndex: 9998,
           backgroundColor: 'rgba(0, 0, 0, 0.4)',
           animation: open && !isAnimating ? 'backdropFadeIn 0.3s ease-out' : 'backdropFadeOut 0.2s ease-in',
@@ -203,7 +213,7 @@ export const IOSBottomSheet = ({
             }}
           />
         </Box>
-      </Backdrop>
+      </Box>
     </Portal>
   );
 };
