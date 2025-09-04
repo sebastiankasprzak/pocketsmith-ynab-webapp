@@ -459,7 +459,8 @@ export const AccountMappings: React.FC = () => {
     return (
       <Box sx={{ 
         position: 'relative', 
-        pb: isMobile ? 10 : 0,
+        // Add extra bottom padding to account for FAB (56px) + margin (16px) + tab bar (55px) + safe area
+        pb: isMobile ? 'calc(56px + 16px + 55px + env(safe-area-inset-bottom, 0px) + 16px)' : 0,
         width: '100%',
         maxWidth: '100%',
         overflow: 'hidden',
@@ -703,7 +704,7 @@ export const AccountMappings: React.FC = () => {
   return (
     <Box sx={{ 
       position: 'relative', 
-      pb: isMobile ? 10 : 0,
+      pb: isMobile ? 8 : 0, // Reduced padding for non-iOS layout
       width: '100%',
       maxWidth: '100%',
       overflow: 'hidden',
