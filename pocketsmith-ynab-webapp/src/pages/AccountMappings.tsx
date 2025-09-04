@@ -47,6 +47,10 @@ import { IOSNavigationBar } from '../components/IOSNavigationBar';
 import { IOSFloatingActionButton } from '../components/IOSFloatingActionButton';
 import { IOSMappingCreationModal } from '../components/IOSMappingCreationModal';
 import { IOSBulkActionsToolbar } from '../components/IOSBulkActionsToolbar';
+import { IOSActionSheet } from '../components/IOSActionSheet';
+import { IOSConfirmationDialog } from '../components/IOSConfirmationDialog';
+import { IOSLoadingOverlay } from '../components/IOSLoadingStates';
+import { useIOSNotifications } from '../components/IOSNotification';
 import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useSelectionState } from '../hooks/useSelectionState';
 import { useAccounts, useMappings, useSaveMappings, useDeleteMapping, useValidateMappings, useUpdateMappingConfig } from '../hooks/useAccountMappings';
@@ -322,6 +326,20 @@ export const AccountMappings: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
   const [selectionMode, setSelectionMode] = useState(false);
   const [editingMapping, setEditingMapping] = useState<string | null>(null);
+  
+  // iOS Action Sheet and Dialog states
+  const [bulkActionSheetOpen, setBulkActionSheetOpen] = useState(false);
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+  const [confirmationAction, setConfirmationAction] = useState<{
+    title: string;
+    message: string;
+    action: () => void;
+    destructive?: boolean;
+  } | null>(null);
+  const [asyncOperationLoading, setAsyncOperationLoading] = useState(false);
+  
+  // iOS Notifications
+  const { showSuccess, showError, NotificationContainer } = useIOSNotifications();
 
   // Selection state for bulk operations
   const selectionState = useSelectionState<string>();
@@ -364,18 +382,32 @@ export const AccountMappings: React.FC = () => {
   };
 
   const handleDeleteMapping = async (pocketsmithAccountId: string) => {
-    try {
-      await deleteMappingMutation.mutateAsync(pocketsmithAccountId);
-      showSnackbar('Mapping deleted successfully', 'success');
-    } catch (error) {
-      showSnackbar('Failed to delete mapping', 'error');
-    }
+    const mapping = mappingsData?.mappings?.find(m => m.pocketsmithAccountId === pocketsmithAccountId);
+    
+    // Show confirmation dialog for destructive action
+    setConfirmationAction({
+      title: 'Delete Mapping?',
+      message: `This will permanently remove the mapping for "${mapping?.pocketsmithAccountName}". This action cannot be undone.`,
+      destructive: true,
+      action: async () => {
+        setAsyncOperationLoading(true);
+        try {
+          await deleteMappingMutation.mutateAsync(pocketsmithAccountId);
+          showSuccess('Mapping Deleted', 'The account mapping has been removed successfully');
+        } catch (error) {
+          showError('Delete Failed', 'Failed to delete the mapping. Please try again.');
+        } finally {
+          setAsyncOperationLoading(false);
+        }
+      }
+    });
+    setConfirmationDialogOpen(true);
   };
 
   const handleEditMapping = (pocketsmithAccountId: string) => {
     setEditingMapping(pocketsmithAccountId);
     // TODO: Open edit dialog with pre-filled data
-    showSnackbar('Edit functionality coming soon', 'success');
+    showSuccess('Coming Soon', 'Edit functionality will be available in a future update');
   };
 
   const handleDuplicateMapping = (mapping: AccountMappingDisplay) => {
@@ -385,22 +417,42 @@ export const AccountMappings: React.FC = () => {
       ynabAccountId: mapping.ynabAccountId,
     };
     setPendingMappings(prev => [...prev, newMapping]);
-    showSnackbar('Mapping duplicated as pending', 'success');
+    showSuccess('Mapping Duplicated', 'A copy has been added to your pending mappings');
   };
 
   const handleBulkDelete = async () => {
     const selectedIds = Array.from(selectionState.selectedItems);
-    try {
-      // Delete selected mappings one by one
-      for (const id of selectedIds) {
-        await deleteMappingMutation.mutateAsync(id);
+    const selectedCount = selectedIds.length;
+    
+    // Show confirmation dialog for destructive action
+    setConfirmationAction({
+      title: `Delete ${selectedCount} ${selectedCount === 1 ? 'Mapping' : 'Mappings'}?`,
+      message: `This action cannot be undone. The selected account ${selectedCount === 1 ? 'mapping' : 'mappings'} will be permanently removed.`,
+      destructive: true,
+      action: async () => {
+        setAsyncOperationLoading(true);
+        try {
+          // Delete selected mappings one by one
+          for (const id of selectedIds) {
+            await deleteMappingMutation.mutateAsync(id);
+          }
+          selectionState.clearSelection();
+          setSelectionMode(false);
+          showSuccess(
+            'Mappings Deleted',
+            `${selectedCount} ${selectedCount === 1 ? 'mapping' : 'mappings'} deleted successfully`
+          );
+        } catch (error) {
+          showError(
+            'Delete Failed',
+            'Failed to delete some mappings. Please try again.'
+          );
+        } finally {
+          setAsyncOperationLoading(false);
+        }
       }
-      selectionState.clearSelection();
-      setSelectionMode(false);
-      showSnackbar(`${selectedIds.length} mappings deleted successfully`, 'success');
-    } catch (error) {
-      showSnackbar('Failed to delete some mappings', 'error');
-    }
+    });
+    setConfirmationDialogOpen(true);
   };
 
   const handleSelectAll = () => {
@@ -421,37 +473,43 @@ export const AccountMappings: React.FC = () => {
     setSelectionMode(true);
   };
 
+  const handleBulkActions = () => {
+    setBulkActionSheetOpen(true);
+  };
+
   const handleSaveMappings = async () => {
     if (pendingMappings.length === 0) return;
 
-    // First, perform client-side validation
-    if (accountsData && mappingsData && mappingsData.mappings) {
-      const existingMappings = mappingsData.mappings.map(m => ({
-        pocketsmithAccountId: m.pocketsmithAccountId,
-        ynabAccountId: m.ynabAccountId
-      }));
-
-      const clientValidation = validateMappings(pendingMappings, {
-        pocketsmithAccounts: accountsData.pocketsmithAccounts,
-        ynabAccounts: accountsData.ynabAccounts,
-        existingMappings
-      });
-
-      if (!clientValidation.valid) {
-        const errorMessage = clientValidation.errors && clientValidation.errors.length > 0 
-          ? clientValidation.errors.join(', ')
-          : 'Unknown validation error';
-        showSnackbar(`Validation failed: ${errorMessage}`, 'error');
-        return;
-      }
-
-      // Show warnings if any
-      if (clientValidation.warnings.length > 0) {
-        // You could show warnings to the user here if desired
-      }
-    }
-
+    setAsyncOperationLoading(true);
+    
     try {
+      // First, perform client-side validation
+      if (accountsData && mappingsData && mappingsData.mappings) {
+        const existingMappings = mappingsData.mappings.map(m => ({
+          pocketsmithAccountId: m.pocketsmithAccountId,
+          ynabAccountId: m.ynabAccountId
+        }));
+
+        const clientValidation = validateMappings(pendingMappings, {
+          pocketsmithAccounts: accountsData.pocketsmithAccounts,
+          ynabAccounts: accountsData.ynabAccounts,
+          existingMappings
+        });
+
+        if (!clientValidation.valid) {
+          const errorMessage = clientValidation.errors && clientValidation.errors.length > 0 
+            ? clientValidation.errors.join(', ')
+            : 'Unknown validation error';
+          showError('Validation Failed', errorMessage);
+          return;
+        }
+
+        // Show warnings if any
+        if (clientValidation.warnings.length > 0) {
+          // You could show warnings to the user here if desired
+        }
+      }
+
       // Server-side validation
       const serverValidation = await validateMappingsMutation.mutateAsync(pendingMappings);
 
@@ -459,17 +517,22 @@ export const AccountMappings: React.FC = () => {
         const errorMessage = serverValidation.errors && serverValidation.errors.length > 0 
           ? serverValidation.errors.join(', ')
           : 'Unknown validation error';
-        showSnackbar(`Server validation failed: ${errorMessage}`, 'error');
+        showError('Server Validation Failed', errorMessage);
         return;
       }
 
       // Save mappings
       await saveMappingsMutation.mutateAsync(pendingMappings);
       setPendingMappings([]);
-      showSnackbar('Mappings saved successfully', 'success');
+      showSuccess(
+        'Mappings Saved',
+        `${pendingMappings.length} ${pendingMappings.length === 1 ? 'mapping' : 'mappings'} saved successfully`
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save mappings';
-      showSnackbar(errorMessage, 'error');
+      showError('Save Failed', errorMessage);
+    } finally {
+      setAsyncOperationLoading(false);
     }
   };
 
@@ -517,20 +580,24 @@ export const AccountMappings: React.FC = () => {
   // Render iOS-style layout when appropriate
   if (shouldUseIOSExperience) {
     return (
-      <Box sx={{ 
-        position: 'relative', 
-        // Add extra bottom padding to account for FAB (56px) + margin (16px) + tab bar (55px) + safe area
-        // Add extra padding for bulk actions toolbar when visible (80px)
-        pb: isMobile ? (
-          selectionMode && selectionState.selectedCount > 0 
-            ? 'calc(56px + 16px + 55px + 80px + env(safe-area-inset-bottom, 0px) + 16px)'
-            : 'calc(56px + 16px + 55px + env(safe-area-inset-bottom, 0px) + 16px)'
-        ) : 0,
-        width: '100%',
-        maxWidth: '100%',
-        overflow: 'hidden',
-        boxSizing: 'border-box'
-      }}>
+      <IOSLoadingOverlay 
+        loading={asyncOperationLoading}
+        message="Processing..."
+      >
+        <Box sx={{ 
+          position: 'relative', 
+          // Add extra bottom padding to account for FAB (56px) + margin (16px) + tab bar (55px) + safe area
+          // Add extra padding for bulk actions toolbar when visible (80px)
+          pb: isMobile ? (
+            selectionMode && selectionState.selectedCount > 0 
+              ? 'calc(56px + 16px + 55px + 80px + env(safe-area-inset-bottom, 0px) + 16px)'
+              : 'calc(56px + 16px + 55px + env(safe-area-inset-bottom, 0px) + 16px)'
+          ) : 0,
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden',
+          boxSizing: 'border-box'
+        }}>
         {/* iOS Navigation Bar */}
         <IOSNavigationBar
           title={selectionMode ? `${selectionState.selectedCount} Selected` : "Account Mappings"}
@@ -800,13 +867,53 @@ export const AccountMappings: React.FC = () => {
           onCancel={handleCancelSelection}
           actions={[
             {
-              label: 'Delete',
-              icon: <DeleteIcon />,
-              destructive: true,
-              onAction: handleBulkDelete,
+              label: 'Actions',
+              icon: <SelectAllIcon />,
+              onAction: handleBulkActions,
             },
           ]}
         />
+
+        {/* iOS Action Sheet for Bulk Operations */}
+        <IOSActionSheet
+          open={bulkActionSheetOpen}
+          onClose={() => setBulkActionSheetOpen(false)}
+          title="Bulk Actions"
+          message={`${selectionState.selectedCount} ${selectionState.selectedCount === 1 ? 'mapping' : 'mappings'} selected`}
+          actions={[
+            {
+              label: `Delete ${selectionState.selectedCount} ${selectionState.selectedCount === 1 ? 'Mapping' : 'Mappings'}`,
+              onPress: () => {
+                setBulkActionSheetOpen(false);
+                handleBulkDelete();
+              },
+              destructive: true,
+            },
+          ]}
+        />
+
+        {/* iOS Confirmation Dialog */}
+        <IOSConfirmationDialog
+          open={confirmationDialogOpen}
+          onClose={() => {
+            setConfirmationDialogOpen(false);
+            setConfirmationAction(null);
+          }}
+          onConfirm={() => {
+            if (confirmationAction) {
+              confirmationAction.action();
+            }
+            setConfirmationDialogOpen(false);
+            setConfirmationAction(null);
+          }}
+          title={confirmationAction?.title || ''}
+          message={confirmationAction?.message}
+          destructive={confirmationAction?.destructive}
+          loading={asyncOperationLoading}
+        />
+
+        {/* iOS Notifications */}
+        <NotificationContainer />
 
         {/* Snackbar for notifications */}
         <Snackbar
@@ -822,7 +929,8 @@ export const AccountMappings: React.FC = () => {
             {snackbarMessage}
           </Alert>
         </Snackbar>
-      </Box>
+        </Box>
+      </IOSLoadingOverlay>
     );
   }
 

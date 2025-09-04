@@ -138,7 +138,7 @@
   - Add iOS-style selection states and bulk operations
   - _Requirements: 2.4, 2.7, 6.2, 6.6_
 
-- [ ] 15. Add Account Mappings Action Sheets
+- [x] 15. Add Account Mappings Action Sheets
   - Create iOS-style action sheets for bulk operations
   - Implement iOS-style confirmation dialogs for destructive actions
   - Add iOS-style loading overlays for async operations
