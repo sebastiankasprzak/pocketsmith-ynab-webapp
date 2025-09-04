@@ -47,3 +47,4 @@ export * from './IOSSearchBar';
 export * from './IOSSwipeableCard';
 export * from './IOSPullToRefresh';
 export * from './IOSMetricCard';
+export * from './IOSFloatingActionButton';

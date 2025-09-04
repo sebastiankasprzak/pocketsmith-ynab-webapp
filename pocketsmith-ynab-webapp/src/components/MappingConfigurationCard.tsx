@@ -27,10 +27,9 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Info as InfoIcon,
-  AccountBalance as BudgetIcon,
+
 } from '@mui/icons-material';
-import type { YNABAccount, ExistingAccountMappingConfig, YNABBudget } from '../types/accounts';
-import { useYNABBudgets, useUpdateYNABBudgetId } from '../hooks/useAccountMappings';
+import type { YNABAccount, ExistingAccountMappingConfig } from '../types/accounts';
 
 interface MappingConfigurationCardProps {
   config: ExistingAccountMappingConfig;
@@ -54,9 +53,7 @@ export const MappingConfigurationCard: React.FC<MappingConfigurationCardProps> =
   const [success, setSuccess] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  // Budget management
-  const { data: budgetsData, isLoading: budgetsLoading, error: budgetsError } = useYNABBudgets();
-  const updateBudgetMutation = useUpdateYNABBudgetId();
+
 
   // Update local state when config changes
   useEffect(() => {
@@ -103,16 +100,7 @@ export const MappingConfigurationCard: React.FC<MappingConfigurationCardProps> =
     setSuccess(false);
   };
 
-  const handleBudgetChange = async (budgetId: string) => {
-    try {
-      setError(null);
-      await updateBudgetMutation.mutateAsync(budgetId);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update budget');
-    }
-  };
+
 
   // Filter YNAB accounts to only show on-budget, non-closed accounts for default selection
   const availableDefaultAccounts = ynabAccounts.filter(account => 
@@ -269,64 +257,6 @@ export const MappingConfigurationCard: React.FC<MappingConfigurationCardProps> =
           <Divider sx={{ mb: 3 }} />
           
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* YNAB Budget Selection */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BudgetIcon color="primary" />
-                YNAB Budget
-              </Typography>
-              
-              {budgetsError ? (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  Failed to load YNAB budgets. Please check your YNAB API configuration.
-                </Alert>
-              ) : budgetsLoading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-                  <CircularProgress size={20} />
-                  <Typography variant="body2" color="text.secondary">
-                    Loading YNAB budgets...
-                  </Typography>
-                </Box>
-              ) : budgetsData?.budgets && budgetsData.budgets.length > 0 ? (
-                <FormControl fullWidth>
-                  <InputLabel>Select YNAB Budget</InputLabel>
-                  <Select
-                    value=""
-                    onChange={(e) => handleBudgetChange(e.target.value)}
-                    label="Select YNAB Budget"
-                    disabled={updateBudgetMutation.isPending}
-                    MenuProps={{
-                      PaperProps: {
-                        style: {
-                          maxHeight: 300,
-                        },
-                      },
-                    }}
-                  >
-                    {budgetsData.budgets.map((budget) => (
-                      <MenuItem key={budget.id} value={budget.id}>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {budget.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {budget.currency_format.iso_code} • Last modified: {new Date(budget.last_modified_on).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              ) : (
-                <Alert severity="info">
-                  No YNAB budgets found. Please ensure you have at least one budget in your YNAB account.
-                </Alert>
-              )}
-              
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Changing the budget will reload all account mappings and may require reconfiguration.
-              </Typography>
-            </Box>
 
             {/* Strict Mode Toggle */}
             <Box>

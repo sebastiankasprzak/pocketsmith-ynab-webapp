@@ -27,6 +27,7 @@ import { StatusIndicator } from '../components/StatusIndicator';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { DashboardNotifications } from '../components/DashboardNotifications';
 import { IOSDashboardNotifications } from '../components/IOSDashboardNotifications';
+import { NotificationPanel } from '../components/NotificationPanel';
 import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useSwipeGestures } from '../hooks/useSwipeGestures';
@@ -263,23 +264,24 @@ export const Dashboard: React.FC = () => {
           title="Dashboard"
           large={false}
           rightAction={
-            <IOSButton
-              variant="plain"
-              size="small"
-              onClick={handleRefreshWithFeedback}
-              hapticFeedback={true}
-              pressAnimation={true}
-            >
-              <Refresh sx={{ fontSize: '20px' }} />
-            </IOSButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <NotificationPanel
+                notifications={notifications}
+                onDismiss={handleDismissNotification}
+              />
+              <IOSButton
+                variant="plain"
+                size="small"
+                onClick={handleRefreshWithFeedback}
+                hapticFeedback={true}
+                pressAnimation={true}
+              >
+                <Refresh sx={{ fontSize: '20px' }} />
+              </IOSButton>
+            </Box>
           }
         />
-        
-        {/* Smart Notifications - Now as overlay */}
-        <IOSDashboardNotifications
-          notifications={notifications}
-          onDismiss={handleDismissNotification}
-        />
+
 
         {/* Sync Status Section - iOS Grouped List Format */}
         <IOSSection title="Sync Status">
@@ -694,29 +696,30 @@ export const Dashboard: React.FC = () => {
               />
             )}
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Refresh />}
-            onClick={handleRefreshWithFeedback}
-            sx={{
-              transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
-              '&:active': {
-                transform: 'scale(0.96)',
-              }
-            }}
-          >
-            Refresh
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationPanel
+              notifications={notifications}
+              onDismiss={handleDismissNotification}
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Refresh />}
+              onClick={handleRefreshWithFeedback}
+              sx={{
+                transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                '&:active': {
+                  transform: 'scale(0.96)',
+                }
+              }}
+            >
+              Refresh
+            </Button>
+          </Box>
         </Box>
       </Box>
 
-      {/* Smart Notifications */}
-      <IOSDashboardNotifications
-        notifications={notifications}
-        onDismiss={handleDismissNotification}
-        autoHideDuration={5000}
-      />
+
 
       <Grid container spacing={{ xs: 2, md: 3 }}>
         {/* Main Action Cards */}

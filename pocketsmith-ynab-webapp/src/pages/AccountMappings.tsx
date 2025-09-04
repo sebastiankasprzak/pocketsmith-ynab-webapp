@@ -34,6 +34,14 @@ import {
   TrendingUp as TrendingUpIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import { IOSSection } from '../components/IOSSection';
+import { IOSCard } from '../components/IOSCard';
+import { IOSListItem, createDeleteAction } from '../components/IOSListItem';
+import { IOSButton } from '../components/IOSButton';
+import { IOSMetricCard } from '../components/IOSMetricCard';
+import { IOSNavigationBar } from '../components/IOSNavigationBar';
+import { IOSFloatingActionButton } from '../components/IOSFloatingActionButton';
+import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useAccounts, useMappings, useSaveMappings, useDeleteMapping, useValidateMappings, useUpdateMappingConfig } from '../hooks/useAccountMappings';
 import { MappingConfigurationCard } from '../components/MappingConfigurationCard';
 import { ImprovedMappingCard } from '../components/ImprovedMappingCard';
@@ -312,6 +320,7 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
 export const AccountMappings: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { shouldUseIOSExperience } = useIOSDetection();
 
   const [newMappingDialogOpen, setNewMappingDialogOpen] = useState(false);
   const [pendingMappings, setPendingMappings] = useState<AccountMappingCreate[]>([]);
@@ -458,6 +467,252 @@ export const AccountMappings: React.FC = () => {
 
   const totalMappings = (mappingsData?.mappings?.length || 0) + pendingMappings.length;
 
+  // Render iOS-style layout when appropriate
+  if (shouldUseIOSExperience) {
+    return (
+      <Box sx={{ 
+        position: 'relative', 
+        pb: isMobile ? 10 : 0,
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
+      }}>
+        {/* iOS Navigation Bar */}
+        <IOSNavigationBar
+          title="Account Mappings"
+          large={true}
+          rightAction={
+            <IOSButton
+              variant="plain"
+              size="small"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              Refresh
+            </IOSButton>
+          }
+        />
+
+        {/* Statistics Section */}
+        <IOSSection title="Statistics" grouped={false}>
+          <Grid container spacing={2}>
+            <Grid item xs={6} sm={3}>
+              <IOSMetricCard
+                value={totalMappings}
+                label="Total Mappings"
+                color="primary"
+                icon={<BankIcon />}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <IOSMetricCard
+                value={mappingsData?.mappings?.filter(m => m.isActive).length || 0}
+                label="Active"
+                color="success"
+                icon={<CheckCircleIcon />}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <IOSMetricCard
+                value={pendingMappings.length}
+                label="Pending"
+                color="warning"
+                icon={<TrendingUpIcon />}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <IOSMetricCard
+                value={availableAccounts.pocketsmith.length}
+                label="Available"
+                color="info"
+                icon={<AddIcon />}
+              />
+            </Grid>
+          </Grid>
+        </IOSSection>
+
+        {/* Account Mappings Section */}
+        <IOSSection 
+          title={`Account Mappings (${totalMappings})`}
+          headerAction={
+            pendingMappings.length > 0 ? (
+              <IOSButton
+                variant="primary"
+                size="small"
+                onClick={handleSaveMappings}
+                disabled={saveMappingsMutation.isPending}
+              >
+                Save ({pendingMappings.length})
+              </IOSButton>
+            ) : undefined
+          }
+        >
+          {(!mappingsData?.mappings || mappingsData.mappings.length === 0) && pendingMappings.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
+              <BankIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No Account Mappings
+              </Typography>
+              <Typography color="text.secondary" sx={{ mb: 3 }}>
+                Create your first mapping to start syncing accounts between PocketSmith and YNAB.
+              </Typography>
+              <IOSButton
+                variant="primary"
+                onClick={() => setNewMappingDialogOpen(true)}
+                disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
+              >
+                Create First Mapping
+              </IOSButton>
+              {(availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0) && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                  {availableAccounts.pocketsmith.length === 0 && availableAccounts.ynab.length === 0
+                    ? 'No accounts available from either PocketSmith or YNAB'
+                    : availableAccounts.pocketsmith.length === 0
+                    ? 'No PocketSmith accounts available'
+                    : 'No YNAB accounts available'
+                  }
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <>
+              {/* Existing mappings */}
+              {mappingsData?.mappings?.map((mapping) => (
+                <IOSListItem
+                  key={mapping.pocketsmithAccountId}
+                  leftIcon={<BankIcon color="primary" />}
+                  showDisclosure={true}
+                  swipeActions={[createDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId))]}
+                  divider={true}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {mapping.pocketsmithAccountName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      → {mapping.ynabAccountName}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: mapping.isActive ? 'success.main' : 'text.secondary',
+                        fontWeight: 500 
+                      }}
+                    >
+                      {mapping.isActive ? 'Active' : 'Inactive'}
+                    </Typography>
+                  </Box>
+                </IOSListItem>
+              ))}
+
+              {/* Pending mappings */}
+              {pendingMappings.map((mapping, index) => {
+                const psAccount = accountsData?.pocketsmithAccounts.find(
+                  a => a.id.toString() === mapping.pocketsmithAccountId
+                );
+                const ynabAccount = accountsData?.ynabAccounts.find(
+                  a => a.id === mapping.ynabAccountId
+                );
+
+                return (
+                  <IOSListItem
+                    key={`pending-${index}`}
+                    leftIcon={<AddIcon color="warning" />}
+                    swipeActions={[createDeleteAction(() => handleRemovePendingMapping(index))]}
+                    divider={true}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {psAccount?.title || 'Unknown Account'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        → {ynabAccount?.name || 'Unknown Account'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: 'warning.main',
+                          fontWeight: 500 
+                        }}
+                      >
+                        Pending
+                      </Typography>
+                    </Box>
+                  </IOSListItem>
+                );
+              })}
+            </>
+          )}
+        </IOSSection>
+
+        {/* Configuration Settings Section */}
+        {mappingsData?.config && accountsData?.ynabAccounts && (
+          <IOSSection title="Mapping Settings" grouped={false}>
+            <Box sx={{ mx: 2 }}>
+              <MappingConfigurationCard
+                config={mappingsData.config}
+                ynabAccounts={accountsData.ynabAccounts}
+                onSave={handleConfigSave}
+                isLoading={isLoading}
+              />
+            </Box>
+          </IOSSection>
+        )}
+
+        {/* Budget Selection Section */}
+        <IOSSection title="Budget Configuration" grouped={false}>
+          <Box sx={{ mx: 2 }}>
+            <BudgetSelector 
+              currentBudgetId={accountsData?.currentBudgetId}
+              onBudgetChange={() => {
+                refetchAccounts();
+                refetchMappings();
+              }}
+            />
+          </Box>
+        </IOSSection>
+
+        {/* iOS Floating Action Button */}
+        <IOSFloatingActionButton
+          onClick={() => setNewMappingDialogOpen(true)}
+          disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
+        >
+          <AddIcon />
+        </IOSFloatingActionButton>
+
+        {/* New Mapping Dialog */}
+        <NewMappingDialog
+          open={newMappingDialogOpen}
+          onClose={() => setNewMappingDialogOpen(false)}
+          onSave={handleAddMapping}
+          availablePocketSmithAccounts={availableAccounts.pocketsmith}
+          availableYnabAccounts={availableAccounts.ynab}
+        />
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Box>
+    );
+  }
+
+  // Fallback to original Material-UI layout for non-iOS devices
   return (
     <Box sx={{ 
       position: 'relative', 
@@ -605,30 +860,6 @@ export const AccountMappings: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {/* Budget Selection */}
-        <Card>
-          <CardContent>
-            <BudgetSelector 
-              currentBudgetId={accountsData?.currentBudgetId}
-              onBudgetChange={() => {
-                // Refresh accounts and mappings after budget change
-                refetchAccounts();
-                refetchMappings();
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Configuration Settings */}
-        {mappingsData?.config && accountsData?.ynabAccounts && (
-          <MappingConfigurationCard
-            config={mappingsData.config}
-            ynabAccounts={accountsData.ynabAccounts}
-            onSave={handleConfigSave}
-            isLoading={isLoading}
-          />
-        )}
-
         {/* Current Mappings */}
         <Card>
           <CardHeader
@@ -729,6 +960,30 @@ export const AccountMappings: React.FC = () => {
                 })}
               </Grid>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Configuration Settings */}
+        {mappingsData?.config && accountsData?.ynabAccounts && (
+          <MappingConfigurationCard
+            config={mappingsData.config}
+            ynabAccounts={accountsData.ynabAccounts}
+            onSave={handleConfigSave}
+            isLoading={isLoading}
+          />
+        )}
+
+        {/* Budget Selection */}
+        <Card>
+          <CardContent>
+            <BudgetSelector 
+              currentBudgetId={accountsData?.currentBudgetId}
+              onBudgetChange={() => {
+                // Refresh accounts and mappings after budget change
+                refetchAccounts();
+                refetchMappings();
+              }}
+            />
           </CardContent>
         </Card>
       </Box>
