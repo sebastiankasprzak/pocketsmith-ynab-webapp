@@ -48,8 +48,15 @@ body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  /* PWA fullscreen support */
-  background-color: #1976d2; /* Status bar area color */
+  /* PWA fullscreen support - matches navigation bar */
+  background-color: rgba(248, 248, 248, 1); /* Light mode status bar area */
+}
+
+/* Dark mode body background */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: rgba(28, 28, 30, 1); /* Dark mode status bar area */
+  }
 }
 
 /* iOS device-specific styles */
@@ -59,8 +66,15 @@ body.ios-device {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  /* PWA fullscreen background for status bar area */
-  background-color: #1976d2;
+  /* PWA fullscreen background for status bar area - matches navigation */
+  background-color: rgba(248, 248, 248, 1);
+}
+
+/* Dark mode for iOS devices */
+@media (prefers-color-scheme: dark) {
+  body.ios-device {
+    background-color: rgba(28, 28, 30, 1);
+  }
 }
 
 body.ios-device #root {
@@ -114,7 +128,8 @@ button:focus-visible {
   html, body {
     height: 100vh;
     height: 100dvh;
-    background-color: #1976d2; /* Match theme color for status bar area */
+    /* iOS status bar area - matches navigation bar background */
+    background-color: rgba(248, 248, 248, 1); /* Light mode navigation background */
   }
   
   #root {
@@ -126,11 +141,12 @@ button:focus-visible {
   /* Dark mode support for PWA */
   @media (prefers-color-scheme: dark) {
     html, body {
-      background-color: #0d47a1; /* Dark theme color for status bar */
+      /* iOS status bar area - matches dark navigation bar background */
+      background-color: rgba(28, 28, 30, 1); /* Dark mode navigation background */
     }
     
     #root {
-      background-color: #121212; /* Dark app content background */
+      background-color: #000000; /* Dark app content background */
     }
   }
 }

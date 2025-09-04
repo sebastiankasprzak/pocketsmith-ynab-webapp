@@ -44,6 +44,7 @@ import { IOSListItem, createDeleteAction, createContextEditAction, createContext
 import { IOSButton } from '../components/IOSButton';
 import { IOSMetricCard } from '../components/IOSMetricCard';
 import { IOSNavigationBar } from '../components/IOSNavigationBar';
+import { NotificationPanel } from '../components/NotificationPanel';
 import { IOSFloatingActionButton } from '../components/IOSFloatingActionButton';
 import { IOSMappingCreationModal } from '../components/IOSMappingCreationModal';
 import { IOSBulkActionsToolbar } from '../components/IOSBulkActionsToolbar';
@@ -340,6 +341,9 @@ export const AccountMappings: React.FC = () => {
   
   // iOS Notifications
   const { showSuccess, showError, NotificationContainer } = useIOSNotifications();
+  
+  // Notification panel state
+  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
 
   // Selection state for bulk operations
   const selectionState = useSelectionState<string>();
@@ -372,6 +376,80 @@ export const AccountMappings: React.FC = () => {
       ),
     };
   }, [accountsData, mappingsData]);
+
+  // Generate notifications based on mapping data
+  const notifications = React.useMemo(() => {
+    const notifs = [];
+
+    // Error loading accounts
+    if (accountsError) {
+      notifs.push({
+        id: 'accounts-load-error',
+        type: 'error' as const,
+        title: 'Unable to load accounts',
+        message: 'There was an error loading account data. Please check your API connections and try again.',
+        dismissible: true
+      });
+    }
+
+    // Error loading mappings
+    if (mappingsError) {
+      notifs.push({
+        id: 'mappings-load-error',
+        type: 'error' as const,
+        title: 'Unable to load mappings',
+        message: 'There was an error loading existing account mappings.',
+        dismissible: true
+      });
+    }
+
+    // Unmapped accounts available
+    if (availableAccounts.pocketsmith.length > 0) {
+      notifs.push({
+        id: 'unmapped-accounts',
+        type: 'info' as const,
+        title: `${availableAccounts.pocketsmith.length} accounts need mapping`,
+        message: 'Complete account mappings to enable full synchronization between PocketSmith and YNAB.',
+        dismissible: true
+      });
+    }
+
+    // All accounts mapped
+    if (mappingsData?.mappings && availableAccounts.pocketsmith.length === 0 && mappingsData.mappings.length > 0) {
+      notifs.push({
+        id: 'all-mapped',
+        type: 'success' as const,
+        title: 'All accounts mapped',
+        message: 'Great! All your PocketSmith accounts are now mapped to YNAB accounts.',
+        dismissible: true
+      });
+    }
+
+    // Pending mappings to save
+    if (pendingMappings.length > 0) {
+      notifs.push({
+        id: 'pending-mappings',
+        type: 'warning' as const,
+        title: `${pendingMappings.length} unsaved mappings`,
+        message: 'You have unsaved account mappings. Remember to save your changes.',
+        dismissible: false
+      });
+    }
+
+    // Filter out dismissed notifications
+    return notifs.filter(n => !dismissedNotifications.includes(n.id));
+  }, [
+    accountsError,
+    mappingsError,
+    availableAccounts.pocketsmith.length,
+    mappingsData?.mappings,
+    pendingMappings.length,
+    dismissedNotifications
+  ]);
+
+  const handleDismissNotification = (id: string) => {
+    setDismissedNotifications(prev => [...prev, id]);
+  };
 
   const handleAddMapping = (mapping: AccountMappingCreate) => {
     setPendingMappings(prev => [...prev, mapping]);
@@ -621,7 +699,11 @@ export const AccountMappings: React.FC = () => {
                 {selectionState.isAllSelected(mappingsData?.mappings?.map(m => m.pocketsmithAccountId) || []) ? 'Deselect All' : 'Select All'}
               </IOSButton>
             ) : (
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <NotificationPanel
+                  notifications={notifications}
+                  onDismiss={handleDismissNotification}
+                />
                 {(mappingsData?.mappings?.length || 0) > 0 && (
                   <IOSButton
                     variant="plain"
@@ -637,7 +719,7 @@ export const AccountMappings: React.FC = () => {
                   onClick={handleRefresh}
                   disabled={isLoading}
                 >
-                  Refresh
+                  <RefreshIcon sx={{ fontSize: '20px' }} />
                 </IOSButton>
               </Box>
             )
@@ -946,9 +1028,26 @@ export const AccountMappings: React.FC = () => {
     }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 600 }}>
-          Account Mappings
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
+            Account Mappings
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationPanel
+              notifications={notifications}
+              onDismiss={handleDismissNotification}
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              Refresh
+            </Button>
+          </Box>
+        </Box>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
           Configure how your PocketSmith accounts sync with YNAB accounts.
         </Typography>

@@ -18,6 +18,10 @@ import { SyncProgressTracker } from '../components/SyncProgressTracker';
 import ModernSyncStatusCard from '../components/ModernSyncStatusCard';
 import AccountSyncStateTable from '../components/AccountSyncStateTable';
 import RecentActivityCard from '../components/RecentActivityCard';
+import { IOSNavigationBar } from '../components/IOSNavigationBar';
+import { NotificationPanel } from '../components/NotificationPanel';
+import { IOSButton } from '../components/IOSButton';
+import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import type { SyncTriggerResponse } from '../services/syncApi';
 
@@ -26,6 +30,9 @@ const ACTIVITY_HOURS_KEY = 'syncStatus.activityHours';
 const AUTO_REFRESH_KEY = 'syncStatus.autoRefresh';
 
 export const SyncStatus: React.FC = () => {
+  const { shouldUseIOSExperience } = useIOSDetection();
+  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
+  
   // Initialize state from localStorage or defaults
   const [activityHours, setActivityHours] = useState(() => {
     const saved = localStorage.getItem(ACTIVITY_HOURS_KEY);
@@ -99,6 +106,79 @@ export const SyncStatus: React.FC = () => {
     handleRefresh();
   };
 
+  // Generate notifications based on sync status
+  const notifications = React.useMemo(() => {
+    const notifs = [];
+
+    // Sync state error notifications
+    if (syncStateError) {
+      notifs.push({
+        id: 'sync-state-error',
+        type: 'error' as const,
+        title: 'Unable to load sync status',
+        message: 'There was an error loading the sync status. Please check your connection and try again.',
+        dismissible: true
+      });
+    }
+
+    // Recent activity error notifications
+    if (recentActivityError) {
+      notifs.push({
+        id: 'activity-error',
+        type: 'error' as const,
+        title: 'Unable to load recent activity',
+        message: 'There was an error loading recent sync activity.',
+        dismissible: true
+      });
+    }
+
+    // Sync trigger error notifications
+    if (syncTriggerError) {
+      notifs.push({
+        id: 'sync-trigger-error',
+        type: 'error' as const,
+        title: 'Sync failed to start',
+        message: 'There was an error starting the synchronization process. Please try again.',
+        dismissible: true
+      });
+    }
+
+    // Active sync notification
+    if (syncStateOverview.data?.status === 'syncing') {
+      notifs.push({
+        id: 'sync-in-progress',
+        type: 'info' as const,
+        title: 'Synchronization in progress',
+        message: 'Data is currently being synchronized between PocketSmith and YNAB.',
+        dismissible: false
+      });
+    }
+
+    // Failed sync notification
+    if (syncStateOverview.data?.status === 'error') {
+      notifs.push({
+        id: 'sync-failed',
+        type: 'error' as const,
+        title: 'Synchronization failed',
+        message: syncStateOverview.data.message || 'The last synchronization attempt failed. Please check the details and try again.',
+        dismissible: true
+      });
+    }
+
+    // Filter out dismissed notifications
+    return notifs.filter(n => !dismissedNotifications.includes(n.id));
+  }, [
+    syncStateError,
+    recentActivityError,
+    syncTriggerError,
+    syncStateOverview.data,
+    dismissedNotifications
+  ]);
+
+  const handleDismissNotification = (id: string) => {
+    setDismissedNotifications(prev => [...prev, id]);
+  };
+
   const handleAutoRefreshToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.checked;
     setAutoRefresh(newValue);
@@ -125,23 +205,75 @@ export const SyncStatus: React.FC = () => {
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-          Sync Status Dashboard
-        </Typography>
-        <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
+      {/* iOS Navigation Bar */}
+      {shouldUseIOSExperience && (
+        <IOSNavigationBar
+          title="Sync Status"
+          large={false}
+          rightAction={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <NotificationPanel
+                notifications={notifications}
+                onDismiss={handleDismissNotification}
+              />
+              <IOSButton
+                variant="plain"
+                size="small"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                hapticFeedback={true}
+                pressAnimation={true}
+              >
+                <Refresh sx={{ fontSize: '20px' }} />
+              </IOSButton>
+            </Box>
+          }
+        />
+      )}
+
+      {/* Standard Header for non-iOS */}
+      {!shouldUseIOSExperience && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
+            Sync Status Dashboard
           </Typography>
-          {isRefreshing && (
-            <Chip 
-              size="small" 
-              label="Refreshing..." 
-              color="primary" 
-              icon={<CircularProgress size={12} />} 
-            />
-          )}
+          <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
+            </Typography>
+            {isRefreshing && (
+              <Chip 
+                size="small" 
+                label="Refreshing..." 
+                color="primary" 
+                icon={<CircularProgress size={12} />} 
+              />
+            )}
+          </Box>
         </Box>
+      )}
+
+      {/* Status info for iOS */}
+      {shouldUseIOSExperience && (
+        <Box sx={{ px: 2, py: 1, mb: 2 }}>
+          <Box display="flex" alignItems="center" gap={2} sx={{ mb: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
+            </Typography>
+            {isRefreshing && (
+              <Chip 
+                size="small" 
+                label="Refreshing..." 
+                color="primary" 
+                icon={<CircularProgress size={12} />} 
+              />
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* Controls for non-iOS */}
+      {!shouldUseIOSExperience && (
         <Box 
           display="flex" 
           gap={2} 
@@ -182,7 +314,7 @@ export const SyncStatus: React.FC = () => {
             {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
         </Box>
-      </Box>
+      )}
 
       {hasError && (
         <Alert severity="error" sx={{ mb: 3 }}>

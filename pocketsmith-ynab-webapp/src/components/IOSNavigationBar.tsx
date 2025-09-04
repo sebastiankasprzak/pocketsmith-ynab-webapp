@@ -168,9 +168,15 @@ export const IOSNavigationBar = ({
 
   const getNavigationBarHeight = () => {
     if (large && !isCollapsed) {
-      return capabilities.hasNotch || capabilities.hasDynamicIsland ? 140 : 120;
+      return capabilities.hasNotch || capabilities.hasDynamicIsland ? 120 : 100;
     }
-    return capabilities.hasNotch || capabilities.hasDynamicIsland ? 88 : 68;
+    return capabilities.hasNotch || capabilities.hasDynamicIsland ? 80 : 60;
+  };
+
+  const getStatusBarHeight = () => {
+    if (capabilities.hasNotch) return 44; // iPhone X and newer with notch
+    if (capabilities.hasDynamicIsland) return 54; // iPhone 14 Pro and newer with Dynamic Island
+    return 20; // Older iPhones and fallback
   };
 
   const getTitleOpacity = () => {
@@ -205,8 +211,8 @@ export const IOSNavigationBar = ({
         top: 0,
         zIndex: theme.zIndex.appBar,
         backgroundColor: isDark 
-          ? 'rgba(28, 28, 30, 0.8)' 
-          : 'rgba(248, 248, 248, 0.8)',
+          ? 'rgba(28, 28, 30, 0.95)' 
+          : 'rgba(248, 248, 248, 0.95)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: `0.5px solid ${isDark ? 'rgba(84, 84, 88, 0.6)' : 'rgba(60, 60, 67, 0.29)'}`,
@@ -214,9 +220,20 @@ export const IOSNavigationBar = ({
         transition: 'height 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
         display: 'flex',
         flexDirection: 'column',
-        paddingTop: capabilities.hasNotch || capabilities.hasDynamicIsland 
-          ? 'env(safe-area-inset-top, 44px)' 
-          : '20px',
+        // Enhanced status bar area styling
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: `${getStatusBarHeight()}px`,
+          backgroundColor: isDark 
+            ? 'rgba(28, 28, 30, 1)' 
+            : 'rgba(248, 248, 248, 1)',
+          zIndex: -1,
+        },
+        paddingTop: `${getStatusBarHeight()}px`,
       }}
     >
       {/* Standard Navigation Bar */}

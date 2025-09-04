@@ -19,10 +19,16 @@ import {
   Cached as CachedIcon
 } from '@mui/icons-material';
 import { BalanceComparisonTable } from '../components/BalanceComparisonTable';
+import { IOSNavigationBar } from '../components/IOSNavigationBar';
+import { NotificationPanel } from '../components/NotificationPanel';
+import { IOSButton } from '../components/IOSButton';
+import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useBalanceComparisons, useRefreshBalances } from '../hooks/useBalanceComparisonsQuery';
 
 export const BalanceComparison: React.FC = () => {
   const navigate = useNavigate();
+  const { shouldUseIOSExperience } = useIOSDetection();
+  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   
   const {
@@ -76,6 +82,71 @@ export const BalanceComparison: React.FC = () => {
     ? ((5 - cacheAgeMinutes) / 5) * 100 // 5 minute cache duration
     : 0;
 
+  // Generate notifications based on balance data
+  const notifications = React.useMemo(() => {
+    const notifs = [];
+
+    // Error loading balance data
+    if (error) {
+      notifs.push({
+        id: 'balance-load-error',
+        type: 'error' as const,
+        title: 'Unable to load balance data',
+        message: 'There was an error loading balance comparison data. Please check your connection and try again.',
+        dismissible: true
+      });
+    }
+
+    // Stale data warning
+    if (isStale && cacheAgeMinutes > 10) {
+      notifs.push({
+        id: 'stale-data-warning',
+        type: 'warning' as const,
+        title: 'Data may be outdated',
+        message: `Balance data is ${formatCacheAge(cacheAgeMinutes)} old. Consider refreshing for the latest information.`,
+        dismissible: true
+      });
+    }
+
+    // Balance discrepancies found
+    if (balanceData && balanceData.length > 0) {
+      const totalDiscrepancy = balanceData.reduce((sum, item) => sum + Math.abs(item.difference), 0);
+      notifs.push({
+        id: 'balance-discrepancies',
+        type: 'warning' as const,
+        title: `Found ${balanceData.length} balance discrepancies`,
+        message: `Total discrepancy amount: $${totalDiscrepancy.toFixed(2)}. Review and resolve these differences to ensure data accuracy.`,
+        dismissible: true
+      });
+    }
+
+    // All balances match
+    if (balanceData && balanceData.length === 0 && !loading && !error) {
+      notifs.push({
+        id: 'balances-match',
+        type: 'success' as const,
+        title: 'All balances match perfectly',
+        message: 'No discrepancies found between PocketSmith and YNAB account balances.',
+        dismissible: true
+      });
+    }
+
+    // Filter out dismissed notifications
+    return notifs.filter(n => !dismissedNotifications.includes(n.id));
+  }, [
+    error,
+    isStale,
+    cacheAgeMinutes,
+    balanceData,
+    loading,
+    dismissedNotifications,
+    formatCacheAge
+  ]);
+
+  const handleDismissNotification = (id: string) => {
+    setDismissedNotifications(prev => [...prev, id]);
+  };
+
   return (
     <Box sx={{ 
       width: '100%',
@@ -83,16 +154,55 @@ export const BalanceComparison: React.FC = () => {
       overflow: 'hidden',
       boxSizing: 'border-box'
     }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-          Balance Comparison
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          Compare PocketSmith posted balances with YNAB cleared balances to identify discrepancies.
-        </Typography>
+      {/* iOS Navigation Bar */}
+      {shouldUseIOSExperience && (
+        <IOSNavigationBar
+          title="Balance Comparison"
+          large={false}
+          rightAction={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <NotificationPanel
+                notifications={notifications}
+                onDismiss={handleDismissNotification}
+              />
+              <IOSButton
+                variant="plain"
+                size="small"
+                onClick={refresh}
+                disabled={loading || refreshing}
+                hapticFeedback={true}
+                pressAnimation={true}
+              >
+                <RefreshIcon sx={{ fontSize: '20px' }} />
+              </IOSButton>
+            </Box>
+          }
+        />
+      )}
 
-        {/* Status and Actions */}
+      {/* Standard Header for non-iOS */}
+      {!shouldUseIOSExperience && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
+            Balance Comparison
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            Compare PocketSmith posted balances with YNAB cleared balances to identify discrepancies.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Description for iOS */}
+      {shouldUseIOSExperience && (
+        <Box sx={{ px: 2, py: 1, mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Compare PocketSmith posted balances with YNAB cleared balances to identify discrepancies.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Status and Actions for non-iOS */}
+      {!shouldUseIOSExperience && (
         <Stack 
           direction={{ xs: 'column', sm: 'row' }} 
           spacing={2} 
@@ -158,29 +268,29 @@ export const BalanceComparison: React.FC = () => {
               Auto: {autoRefreshEnabled ? 'ON' : 'OFF'}
             </Button>
           </Tooltip>
+          
+          {/* Cache progress indicator */}
+          {balanceData && cacheProgress > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <LinearProgress 
+                variant="determinate" 
+                value={cacheProgress} 
+                sx={{ 
+                  height: 4, 
+                  borderRadius: 2,
+                  backgroundColor: 'grey.200',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: isStale ? 'warning.main' : 'primary.main'
+                  }
+                }} 
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Cache freshness: {Math.round(cacheProgress)}%
+              </Typography>
+            </Box>
+          )}
         </Stack>
-        
-        {/* Cache progress indicator */}
-        {balanceData && cacheProgress > 0 && (
-          <Box sx={{ mt: 2 }}>
-            <LinearProgress 
-              variant="determinate" 
-              value={cacheProgress} 
-              sx={{ 
-                height: 4, 
-                borderRadius: 2,
-                backgroundColor: 'grey.200',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: isStale ? 'warning.main' : 'primary.main'
-                }
-              }} 
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-              Cache freshness: {Math.round(cacheProgress)}%
-            </Typography>
-          </Box>
-        )}
-      </Box>
+      )}
 
       {/* Cache expiry warning */}
       {balanceData && isStale && cacheAgeMinutes > 5 && (
