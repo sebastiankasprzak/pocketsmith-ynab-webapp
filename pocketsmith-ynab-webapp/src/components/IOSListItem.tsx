@@ -1,6 +1,6 @@
 import React, { ReactNode, useState, useRef, useCallback, useMemo } from 'react';
-import { Box, Typography, IconButton, useTheme } from '@mui/material';
-import { ChevronRight, Delete, Edit } from '@mui/icons-material';
+import { Box, Typography, IconButton, useTheme, Checkbox, Portal, Backdrop } from '@mui/material';
+import { ChevronRight, Delete, Edit, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import './IOSListItem.css';
 
@@ -12,6 +12,14 @@ interface SwipeAction {
   onAction: () => void;
 }
 
+interface IOSContextMenuAction {
+  label: string;
+  icon?: ReactNode;
+  destructive?: boolean;
+  disabled?: boolean;
+  onAction: () => void;
+}
+
 interface IOSListItemProps {
   children: ReactNode;
   onClick?: () => void;
@@ -20,9 +28,13 @@ interface IOSListItemProps {
   leftIcon?: ReactNode;
   rightContent?: ReactNode;
   swipeActions?: SwipeAction[];
+  contextMenuActions?: IOSContextMenuAction[];
   className?: string;
   disabled?: boolean;
   divider?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelectionChange?: (selected: boolean) => void;
 }
 
 /**
@@ -37,9 +49,13 @@ export const IOSListItem = ({
   leftIcon,
   rightContent,
   swipeActions = [],
+  contextMenuActions = [],
   className = '',
   disabled = false,
-  divider = true
+  divider = true,
+  selectable = false,
+  selected = false,
+  onSelectionChange
 }: IOSListItemProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -49,6 +65,9 @@ export const IOSListItem = ({
   const [isPressed, setIsPressed] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
@@ -99,28 +118,53 @@ export const IOSListItem = ({
   }, [impact]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (disabled || swipeActions.length === 0) return;
+    if (disabled) return;
     
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
     isDragging.current = false;
-  }, [disabled, swipeActions.length]);
+
+    // Set up context menu position
+    const rect = itemRef.current?.getBoundingClientRect();
+    if (rect) {
+      setContextMenuPosition({
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      });
+    }
+
+    // Start long press timer for context menu (only if not in selection mode)
+    if (contextMenuActions.length > 0 && !selectable) {
+      const timer = setTimeout(() => {
+        triggerHapticThrottled('medium');
+        setShowContextMenu(true);
+      }, 500); // 500ms long press
+      setLongPressTimer(timer);
+    }
+  }, [disabled, contextMenuActions.length, triggerHapticThrottled]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (disabled || swipeActions.length === 0) return;
+    if (disabled) return;
 
     const currentX = e.touches[0].clientX;
     const currentY = e.touches[0].clientY;
     const deltaX = touchStartX.current - currentX;
     const deltaY = Math.abs(touchStartY.current - currentY);
 
-    // Only start swiping if horizontal movement is greater than vertical
-    if (!isDragging.current && Math.abs(deltaX) > 10 && deltaY < 30) {
+    // Cancel long press if user moves too much
+    if (longPressTimer && (Math.abs(deltaX) > 10 || deltaY > 10)) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+
+    // Only start swiping if horizontal movement is greater than vertical and we have swipe actions
+    if (swipeActions.length > 0 && !isDragging.current && Math.abs(deltaX) > 10 && deltaY < 30) {
       isDragging.current = true;
       triggerHapticThrottled('light');
     }
 
-    if (isDragging.current && deltaX > 0) {
+    if (isDragging.current && deltaX > 0 && swipeActions.length > 0) {
       const maxSwipe = swipeActions.length * 80; // 80px per action
       const newOffset = Math.min(deltaX, maxSwipe);
       
@@ -132,10 +176,16 @@ export const IOSListItem = ({
         triggerHapticThrottled('medium');
       }
     }
-  }, [disabled, swipeActions.length, showActions, updateSwipeOffset, triggerHapticThrottled]);
+  }, [disabled, swipeActions.length, showActions, updateSwipeOffset, triggerHapticThrottled, longPressTimer]);
 
   const handleTouchEnd = useCallback(() => {
     if (disabled) return;
+
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
 
     isDragging.current = false;
     
@@ -144,7 +194,7 @@ export const IOSListItem = ({
       itemRef.current.classList.remove('swiping');
     }
     
-    if (currentOffset.current > 60) {
+    if (currentOffset.current > 60 && swipeActions.length > 0) {
       // Keep actions visible with smooth animation
       const targetOffset = swipeActions.length * 80;
       updateSwipeOffset(targetOffset, true);
@@ -153,14 +203,20 @@ export const IOSListItem = ({
       updateSwipeOffset(0, true);
       setShowActions(false);
     }
-  }, [disabled, swipeActions.length, updateSwipeOffset]);
+  }, [disabled, swipeActions.length, updateSwipeOffset, longPressTimer]);
 
   const handleClick = useCallback(() => {
     if (disabled || isDragging.current || swipeOffset > 0) return;
     
     triggerHapticThrottled('light');
-    onClick?.();
-  }, [disabled, swipeOffset, onClick, triggerHapticThrottled]);
+    
+    // Handle selection mode
+    if (selectable && onSelectionChange) {
+      onSelectionChange(!selected);
+    } else {
+      onClick?.();
+    }
+  }, [disabled, swipeOffset, onClick, triggerHapticThrottled, selectable, selected, onSelectionChange]);
 
   const handleActionClick = useCallback((action: SwipeAction) => {
     triggerHapticThrottled('medium');
@@ -169,19 +225,63 @@ export const IOSListItem = ({
     setShowActions(false);
   }, [triggerHapticThrottled, updateSwipeOffset]);
 
-  const handleMouseDown = useCallback(() => {
-    if (!disabled && onClick) {
+  const handleContextMenuActionClick = useCallback((action: IOSContextMenuAction) => {
+    if (action.disabled) return;
+    
+    triggerHapticThrottled('light');
+    action.onAction();
+    setShowContextMenu(false);
+  }, [triggerHapticThrottled]);
+
+  const handleContextMenuClose = useCallback(() => {
+    setShowContextMenu(false);
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (disabled) return;
+    
+    if (onClick || selectable) {
       setIsPressed(true);
     }
-  }, [disabled, onClick]);
+
+    // Set up context menu position for mouse events
+    const rect = itemRef.current?.getBoundingClientRect();
+    if (rect) {
+      setContextMenuPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+
+    // Start long press timer for context menu (only if not in selection mode)
+    if (contextMenuActions.length > 0 && !selectable) {
+      const timer = setTimeout(() => {
+        triggerHapticThrottled('medium');
+        setShowContextMenu(true);
+      }, 500);
+      setLongPressTimer(timer);
+    }
+  }, [disabled, onClick, selectable, contextMenuActions.length, triggerHapticThrottled]);
 
   const handleMouseUp = useCallback(() => {
     setIsPressed(false);
-  }, []);
+    
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }, [longPressTimer]);
 
   const handleMouseLeave = useCallback(() => {
     setIsPressed(false);
-  }, []);
+    
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }, [longPressTimer]);
 
   // Memoize styles for better performance
   const containerStyles = useMemo(() => ({
@@ -196,8 +296,10 @@ export const IOSListItem = ({
     alignItems: 'center',
     minHeight: 44,
     padding: '12px 16px',
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    cursor: onClick && !disabled ? 'pointer' : 'default',
+    backgroundColor: selected 
+      ? (isDark ? 'rgba(10, 132, 255, 0.15)' : 'rgba(10, 132, 255, 0.1)')
+      : (isDark ? '#1C1C1E' : '#FFFFFF'),
+    cursor: (onClick || selectable) && !disabled ? 'pointer' : 'default',
     // Optimized transitions - only animate what's necessary
     transition: isAnimating 
       ? 'opacity 0.2s ease, background-color 0.2s ease' 
@@ -211,21 +313,24 @@ export const IOSListItem = ({
         isDark ? 'rgba(84, 84, 88, 0.6)' : 'rgba(60, 60, 67, 0.29)'
       }`,
     }),
-    '&:active': onClick && !disabled ? {
-      backgroundColor: isDark 
-        ? 'rgba(255, 255, 255, 0.05)' 
-        : 'rgba(0, 0, 0, 0.05)',
+    '&:active': (onClick || selectable) && !disabled ? {
+      backgroundColor: selected
+        ? (isDark ? 'rgba(10, 132, 255, 0.25)' : 'rgba(10, 132, 255, 0.2)')
+        : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'),
     } : {},
-  }), [isDark, onClick, disabled, isPressed, divider, isAnimating]);
+  }), [isDark, onClick, selectable, disabled, isPressed, divider, isAnimating, selected]);
 
-  // Cleanup animation frame on unmount
+  // Cleanup animation frame and timers on unmount
   React.useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+      }
     };
-  }, []);
+  }, [longPressTimer]);
 
   return (
     <Box sx={containerStyles}>
@@ -292,8 +397,37 @@ export const IOSListItem = ({
         onTouchEnd={handleTouchEnd}
         sx={mainItemStyles}
       >
+        {/* Selection Checkbox */}
+        {selectable && (
+          <Box
+            sx={{
+              marginRight: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: 24,
+            }}
+          >
+            {selected ? (
+              <CheckCircle 
+                sx={{ 
+                  color: '#007AFF',
+                  fontSize: '24px'
+                }} 
+              />
+            ) : (
+              <RadioButtonUnchecked 
+                sx={{ 
+                  color: isDark ? 'rgba(235, 235, 245, 0.3)' : 'rgba(60, 60, 67, 0.3)',
+                  fontSize: '24px'
+                }} 
+              />
+            )}
+          </Box>
+        )}
+
         {/* Left Icon */}
-        {leftIcon && (
+        {leftIcon && !selectable && (
           <Box
             sx={{
               marginRight: 2,
@@ -372,6 +506,102 @@ export const IOSListItem = ({
           />
         )}
       </Box>
+
+      {/* Context Menu */}
+      {showContextMenu && contextMenuActions.length > 0 && !selectable && (
+        <Portal>
+          <Backdrop
+            open={showContextMenu}
+            onClick={handleContextMenuClose}
+            sx={{
+              zIndex: 9999,
+              backgroundColor: 'rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <Box
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                position: 'absolute',
+                left: contextMenuPosition.x,
+                top: contextMenuPosition.y,
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: isDark 
+                  ? 'rgba(44, 44, 46, 0.95)' 
+                  : 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '12px',
+                minWidth: '200px',
+                overflow: 'hidden',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                animation: 'contextMenuAppear 0.2s ease-out',
+                '@keyframes contextMenuAppear': {
+                  '0%': {
+                    opacity: 0,
+                    transform: 'translate(-50%, -50%) scale(0.8)'
+                  },
+                  '100%': {
+                    opacity: 1,
+                    transform: 'translate(-50%, -50%) scale(1)'
+                  }
+                }
+              }}
+            >
+              {contextMenuActions.map((action, index) => (
+                <Box
+                  key={index}
+                  onClick={() => handleContextMenuActionClick(action)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    px: 3,
+                    py: 2,
+                    cursor: action.disabled ? 'default' : 'pointer',
+                    opacity: action.disabled ? 0.5 : 1,
+                    backgroundColor: 'transparent',
+                    borderBottom: index < contextMenuActions.length - 1 
+                      ? `1px solid ${isDark ? 'rgba(84, 84, 88, 0.6)' : 'rgba(0, 0, 0, 0.1)'}` 
+                      : 'none',
+                    '&:hover': action.disabled ? {} : {
+                      backgroundColor: isDark 
+                        ? 'rgba(255, 255, 255, 0.05)' 
+                        : 'rgba(0, 0, 0, 0.05)'
+                    },
+                    '&:active': action.disabled ? {} : {
+                      backgroundColor: isDark 
+                        ? 'rgba(255, 255, 255, 0.1)' 
+                        : 'rgba(0, 0, 0, 0.1)'
+                    }
+                  }}
+                >
+                  {action.icon && (
+                    <Box sx={{ 
+                      color: action.destructive 
+                        ? '#FF3B30' 
+                        : (isDark ? '#FFFFFF' : '#000000'),
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      {action.icon}
+                    </Box>
+                  )}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: action.destructive 
+                        ? '#FF3B30' 
+                        : (isDark ? '#FFFFFF' : '#000000'),
+                      fontWeight: 500
+                    }}
+                  >
+                    {action.label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Backdrop>
+        </Portal>
+      )}
     </Box>
   );
 };
@@ -391,6 +621,26 @@ export const createEditAction = (onEdit: () => void): SwipeAction => ({
   color: '#FFFFFF',
   backgroundColor: '#007AFF',
   onAction: onEdit,
+});
+
+// Context menu action helpers
+export const createContextEditAction = (onEdit: () => void): IOSContextMenuAction => ({
+  label: 'Edit Mapping',
+  icon: <Edit sx={{ fontSize: '18px' }} />,
+  onAction: onEdit,
+});
+
+export const createContextDeleteAction = (onDelete: () => void): IOSContextMenuAction => ({
+  label: 'Delete Mapping',
+  icon: <Delete sx={{ fontSize: '18px' }} />,
+  destructive: true,
+  onAction: onDelete,
+});
+
+export const createContextDuplicateAction = (onDuplicate: () => void): IOSContextMenuAction => ({
+  label: 'Duplicate Mapping',
+  icon: <Edit sx={{ fontSize: '18px' }} />,
+  onAction: onDuplicate,
 });
 
 export default IOSListItem;

@@ -131,7 +131,7 @@
   - Add iOS-style confirmation dialogs with proper animations
   - _Requirements: 2.2, 2.3, 8.5_
 
-- [ ] 14. Implement Mapping List Interactions
+- [x] 14. Implement Mapping List Interactions
   - Convert mapping cards to iOS-style list items with disclosure indicators
   - Add iOS-style swipe actions for edit and delete operations
   - Implement iOS-style context menus for additional actions

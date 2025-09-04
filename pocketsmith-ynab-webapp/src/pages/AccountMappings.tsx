@@ -33,16 +33,22 @@ import {
   AccountBalance as BankIcon,
   TrendingUp as TrendingUpIcon,
   CheckCircle as CheckCircleIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  FileCopy as DuplicateIcon,
+  SelectAll as SelectAllIcon,
 } from '@mui/icons-material';
 import { IOSSection } from '../components/IOSSection';
 import { IOSCard } from '../components/IOSCard';
-import { IOSListItem, createDeleteAction } from '../components/IOSListItem';
+import { IOSListItem, createDeleteAction, createContextEditAction, createContextDeleteAction, createContextDuplicateAction } from '../components/IOSListItem';
 import { IOSButton } from '../components/IOSButton';
 import { IOSMetricCard } from '../components/IOSMetricCard';
 import { IOSNavigationBar } from '../components/IOSNavigationBar';
 import { IOSFloatingActionButton } from '../components/IOSFloatingActionButton';
 import { IOSMappingCreationModal } from '../components/IOSMappingCreationModal';
+import { IOSBulkActionsToolbar } from '../components/IOSBulkActionsToolbar';
 import { useIOSDetection } from '../hooks/useIOSDetection';
+import { useSelectionState } from '../hooks/useSelectionState';
 import { useAccounts, useMappings, useSaveMappings, useDeleteMapping, useValidateMappings, useUpdateMappingConfig } from '../hooks/useAccountMappings';
 import { MappingConfigurationCard } from '../components/MappingConfigurationCard';
 import { ImprovedMappingCard } from '../components/ImprovedMappingCard';
@@ -314,6 +320,11 @@ export const AccountMappings: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [editingMapping, setEditingMapping] = useState<string | null>(null);
+
+  // Selection state for bulk operations
+  const selectionState = useSelectionState<string>();
 
   // Fetch data
   const { data: accountsData, isLoading: accountsLoading, error: accountsError, refetch: refetchAccounts } = useAccounts();
@@ -359,6 +370,55 @@ export const AccountMappings: React.FC = () => {
     } catch (error) {
       showSnackbar('Failed to delete mapping', 'error');
     }
+  };
+
+  const handleEditMapping = (pocketsmithAccountId: string) => {
+    setEditingMapping(pocketsmithAccountId);
+    // TODO: Open edit dialog with pre-filled data
+    showSnackbar('Edit functionality coming soon', 'success');
+  };
+
+  const handleDuplicateMapping = (mapping: AccountMappingDisplay) => {
+    // Create a new pending mapping based on the existing one
+    const newMapping: AccountMappingCreate = {
+      pocketsmithAccountId: mapping.pocketsmithAccountId,
+      ynabAccountId: mapping.ynabAccountId,
+    };
+    setPendingMappings(prev => [...prev, newMapping]);
+    showSnackbar('Mapping duplicated as pending', 'success');
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedIds = Array.from(selectionState.selectedItems);
+    try {
+      // Delete selected mappings one by one
+      for (const id of selectedIds) {
+        await deleteMappingMutation.mutateAsync(id);
+      }
+      selectionState.clearSelection();
+      setSelectionMode(false);
+      showSnackbar(`${selectedIds.length} mappings deleted successfully`, 'success');
+    } catch (error) {
+      showSnackbar('Failed to delete some mappings', 'error');
+    }
+  };
+
+  const handleSelectAll = () => {
+    const allMappingIds = mappingsData?.mappings?.map(m => m.pocketsmithAccountId) || [];
+    if (selectionState.isAllSelected(allMappingIds)) {
+      selectionState.clearSelection();
+    } else {
+      selectionState.selectAll(allMappingIds);
+    }
+  };
+
+  const handleCancelSelection = () => {
+    selectionState.clearSelection();
+    setSelectionMode(false);
+  };
+
+  const handleEnterSelectionMode = () => {
+    setSelectionMode(true);
   };
 
   const handleSaveMappings = async () => {
@@ -460,7 +520,12 @@ export const AccountMappings: React.FC = () => {
       <Box sx={{ 
         position: 'relative', 
         // Add extra bottom padding to account for FAB (56px) + margin (16px) + tab bar (55px) + safe area
-        pb: isMobile ? 'calc(56px + 16px + 55px + env(safe-area-inset-bottom, 0px) + 16px)' : 0,
+        // Add extra padding for bulk actions toolbar when visible (80px)
+        pb: isMobile ? (
+          selectionMode && selectionState.selectedCount > 0 
+            ? 'calc(56px + 16px + 55px + 80px + env(safe-area-inset-bottom, 0px) + 16px)'
+            : 'calc(56px + 16px + 55px + env(safe-area-inset-bottom, 0px) + 16px)'
+        ) : 0,
         width: '100%',
         maxWidth: '100%',
         overflow: 'hidden',
@@ -468,17 +533,47 @@ export const AccountMappings: React.FC = () => {
       }}>
         {/* iOS Navigation Bar */}
         <IOSNavigationBar
-          title="Account Mappings"
-          large={true}
-          rightAction={
+          title={selectionMode ? `${selectionState.selectedCount} Selected` : "Account Mappings"}
+          large={!selectionMode}
+          leftAction={selectionMode ? (
             <IOSButton
               variant="plain"
               size="small"
-              onClick={handleRefresh}
-              disabled={isLoading}
+              onClick={handleCancelSelection}
             >
-              Refresh
+              Cancel
             </IOSButton>
+          ) : undefined}
+          rightAction={
+            selectionMode ? (
+              <IOSButton
+                variant="plain"
+                size="small"
+                onClick={handleSelectAll}
+              >
+                {selectionState.isAllSelected(mappingsData?.mappings?.map(m => m.pocketsmithAccountId) || []) ? 'Deselect All' : 'Select All'}
+              </IOSButton>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {(mappingsData?.mappings?.length || 0) > 0 && (
+                  <IOSButton
+                    variant="plain"
+                    size="small"
+                    onClick={handleEnterSelectionMode}
+                  >
+                    Select
+                  </IOSButton>
+                )}
+                <IOSButton
+                  variant="plain"
+                  size="small"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                >
+                  Refresh
+                </IOSButton>
+              </Box>
+            )
           }
         />
 
@@ -569,9 +664,25 @@ export const AccountMappings: React.FC = () => {
               {mappingsData?.mappings?.map((mapping) => (
                 <IOSListItem
                   key={mapping.pocketsmithAccountId}
-                  leftIcon={<BankIcon color="primary" />}
-                  showDisclosure={true}
-                  swipeActions={[createDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId))]}
+                  leftIcon={!selectionMode ? <BankIcon color="primary" /> : undefined}
+                  showDisclosure={!selectionMode}
+                  selectable={selectionMode}
+                  selected={selectionState.isSelected(mapping.pocketsmithAccountId)}
+                  onSelectionChange={(selected) => {
+                    if (selected) {
+                      selectionState.toggleSelection(mapping.pocketsmithAccountId);
+                    } else {
+                      selectionState.toggleSelection(mapping.pocketsmithAccountId);
+                    }
+                  }}
+                  swipeActions={!selectionMode ? [
+                    createDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId))
+                  ] : []}
+                  contextMenuActions={!selectionMode ? [
+                    createContextEditAction(() => handleEditMapping(mapping.pocketsmithAccountId)),
+                    createContextDuplicateAction(() => handleDuplicateMapping(mapping)),
+                    createContextDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId)),
+                  ] : []}
                   divider={true}
                 >
                   <Box sx={{ flex: 1 }}>
@@ -680,6 +791,21 @@ export const AccountMappings: React.FC = () => {
           onSave={handleAddMapping}
           availablePocketSmithAccounts={availableAccounts.pocketsmith}
           availableYnabAccounts={availableAccounts.ynab}
+        />
+
+        {/* Bulk Actions Toolbar */}
+        <IOSBulkActionsToolbar
+          selectedCount={selectionState.selectedCount}
+          visible={selectionMode && selectionState.selectedCount > 0}
+          onCancel={handleCancelSelection}
+          actions={[
+            {
+              label: 'Delete',
+              icon: <DeleteIcon />,
+              destructive: true,
+              onAction: handleBulkDelete,
+            },
+          ]}
         />
 
         {/* Snackbar for notifications */}
