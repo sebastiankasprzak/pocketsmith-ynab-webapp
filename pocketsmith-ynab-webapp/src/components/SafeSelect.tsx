@@ -1,5 +1,6 @@
 import React from 'react';
-import { Select, SelectProps } from '@mui/material';
+import { Select } from '@mui/material';
+import type { SelectProps } from '@mui/material/Select';
 
 /**
  * A wrapper around MUI Select that prevents scroll-related errors

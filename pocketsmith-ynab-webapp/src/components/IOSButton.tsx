@@ -1,6 +1,6 @@
 import React, { ReactNode, useState } from 'react';
 import { Button, useTheme } from '@mui/material';
-import type { ButtonProps } from '@mui/material';
+import type { ButtonProps } from '@mui/material/Button';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSButtonProps extends Omit<ButtonProps, 'variant'> {

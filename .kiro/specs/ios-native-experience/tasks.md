@@ -147,21 +147,21 @@
 
 ## Phase 4: Balance Comparison iOS Enhancement
 
-- [ ] 16. Transform Balance Comparison Layout
+- [x] 16. Transform Balance Comparison Layout
   - Replace Material-UI table with iOS-style grouped list sections
   - Implement iOS-style search bar with proper keyboard handling
   - Add iOS-style segmented control for sorting and filtering options
   - Create iOS-style summary cards for discrepancy overview
   - _Requirements: 3.1, 3.2, 3.3, 8.3_
 
-- [ ] 17. Implement Balance Comparison Interactions
+- [x] 17. Implement Balance Comparison Interactions
   - Add iOS-style disclosure indicators for detailed balance views
   - Implement iOS-style pull-to-refresh for data updates
   - Add iOS-style loading states during data fetching
   - Create iOS-style swipe actions for quick operations
   - _Requirements: 3.5, 3.6, 6.1, 6.2_
 
-- [ ] 18. Add Balance Discrepancy Highlighting
+- [x] 18. Add Balance Discrepancy Highlighting
   - Implement iOS-style alert styling for balance discrepancies
   - Create iOS-style status badges for different discrepancy types
   - Add iOS-style color coding following iOS semantic color system

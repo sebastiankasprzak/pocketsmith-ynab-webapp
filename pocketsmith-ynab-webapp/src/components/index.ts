@@ -48,3 +48,6 @@ export * from './IOSSwipeableCard';
 export * from './IOSPullToRefresh';
 export * from './IOSMetricCard';
 export * from './IOSFloatingActionButton';
+export * from './IOSDiscrepancyAlert';
+export * from './IOSDiscrepancyBadge';
+export * from './IOSDetailDisclosure';

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, TextField, useTheme, InputAdornment } from '@mui/material';
-import type { TextFieldProps } from '@mui/material';
+import type { TextFieldProps } from '@mui/material/TextField';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSTextFieldProps extends Omit<TextFieldProps, 'variant'> {

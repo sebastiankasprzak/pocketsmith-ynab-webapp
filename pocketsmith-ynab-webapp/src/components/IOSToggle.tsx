@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, FormControlLabel, Switch, useTheme, Typography } from '@mui/material';
-import type { SwitchProps } from '@mui/material';
+import type { SwitchProps } from '@mui/material/Switch';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSToggleProps extends Omit<SwitchProps, 'onChange'> {

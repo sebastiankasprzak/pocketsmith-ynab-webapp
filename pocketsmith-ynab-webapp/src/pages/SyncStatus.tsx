@@ -14,7 +14,6 @@ import {
   Settings,
 } from '@mui/icons-material';
 import ManualSyncDialog from '../components/ManualSyncDialog';
-import { SyncProgressTracker } from '../components/SyncProgressTracker';
 import ModernSyncStatusCard from '../components/ModernSyncStatusCard';
 import AccountSyncStateTable from '../components/AccountSyncStateTable';
 import RecentActivityCard from '../components/RecentActivityCard';
@@ -23,7 +22,6 @@ import { NotificationPanel } from '../components/NotificationPanel';
 import { IOSButton } from '../components/IOSButton';
 import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useSyncStatus } from '../hooks/useSyncStatus';
-import type { SyncTriggerResponse } from '../services/syncApi';
 
 // Constants for localStorage keys
 const ACTIVITY_HOURS_KEY = 'syncStatus.activityHours';
@@ -44,10 +42,8 @@ export const SyncStatus: React.FC = () => {
     return saved ? JSON.parse(saved) : true;
   });
 
-  // Manual sync dialog and progress tracking
+  // Manual sync dialog
   const [showManualSyncDialog, setShowManualSyncDialog] = useState(false);
-  const [showProgressTracker, setShowProgressTracker] = useState(false);
-  const [currentSyncResponse, setCurrentSyncResponse] = useState<SyncTriggerResponse | null>(null);
 
   // Use React Query hooks for data management with proper activityHours
   const {
@@ -87,24 +83,15 @@ export const SyncStatus: React.FC = () => {
     dateRange?: { startDate: string; endDate: string } 
   } = {}) => {
     try {
-      const response = await triggerSyncAsync(options);
-      setCurrentSyncResponse(response);
-      setShowProgressTracker(true);
+      await triggerSyncAsync(options);
       // Data will be automatically refreshed by React Query after mutation
+      // TODO: Implement proper progress tracking
     } catch (error) {
       console.error('Failed to trigger sync:', error);
     }
   };
 
-  const handleCloseProgressTracker = () => {
-    setShowProgressTracker(false);
-    setCurrentSyncResponse(null);
-  };
 
-  const handleSyncComplete = () => {
-    // Refresh data when sync completes
-    handleRefresh();
-  };
 
   // Generate notifications based on sync status
   const notifications = React.useMemo(() => {
@@ -143,27 +130,9 @@ export const SyncStatus: React.FC = () => {
       });
     }
 
-    // Active sync notification
-    if (syncStateOverview.data?.status === 'syncing') {
-      notifs.push({
-        id: 'sync-in-progress',
-        type: 'info' as const,
-        title: 'Synchronization in progress',
-        message: 'Data is currently being synchronized between PocketSmith and YNAB.',
-        dismissible: false
-      });
-    }
-
-    // Failed sync notification
-    if (syncStateOverview.data?.status === 'error') {
-      notifs.push({
-        id: 'sync-failed',
-        type: 'error' as const,
-        title: 'Synchronization failed',
-        message: syncStateOverview.data.message || 'The last synchronization attempt failed. Please check the details and try again.',
-        dismissible: true
-      });
-    }
+    // Note: SyncStateOverview doesn't have status/message fields
+    // These notifications would need to be based on other data or removed
+    // For now, commenting out until we have proper status tracking
 
     // Filter out dismissed notifications
     return notifs.filter(n => !dismissedNotifications.includes(n.id));
@@ -171,7 +140,6 @@ export const SyncStatus: React.FC = () => {
     syncStateError,
     recentActivityError,
     syncTriggerError,
-    syncStateOverview.data,
     dismissedNotifications
   ]);
 
@@ -364,15 +332,7 @@ export const SyncStatus: React.FC = () => {
         syncInProgress={isSyncTriggering}
       />
 
-      {/* Sync Progress Tracker */}
-      {currentSyncResponse && (
-        <SyncProgressTracker
-          open={showProgressTracker}
-          onClose={handleCloseProgressTracker}
-          syncResponse={currentSyncResponse}
-          onSyncComplete={handleSyncComplete}
-        />
-      )}
+      {/* TODO: Implement proper sync progress tracking */}
     </Box>
   );
 };

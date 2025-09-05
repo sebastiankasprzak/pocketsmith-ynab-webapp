@@ -14,7 +14,7 @@ import {
   ListItemText,
   Typography
 } from '@mui/material';
-import type { SelectProps } from '@mui/material';
+import type { SelectProps } from '@mui/material/Select';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface IOSPickerOption {
