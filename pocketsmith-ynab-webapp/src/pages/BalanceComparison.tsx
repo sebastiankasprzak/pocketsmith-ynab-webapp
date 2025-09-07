@@ -235,7 +235,7 @@ export const BalanceComparison: React.FC = () => {
       return [];
     }
 
-    let filtered = balanceData.comparisons.filter(comparison => {
+    const filtered = balanceData.comparisons.filter(comparison => {
       // Search filter
       const psAccountName = comparison.pocketsmithAccountName || '';
       const ynabAccountName = comparison.ynabAccountName || '';

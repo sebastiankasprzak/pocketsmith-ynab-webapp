@@ -29,7 +29,7 @@ export const IOSSection = ({
     <Box
       className={`ios-section ${isDark ? 'dark' : ''} ${className}`}
       sx={{
-        marginBottom: grouped ? 3 : 2.5,
+        marginBottom: grouped ? 2.5 : 2,
       }}
     >
       {/* Section Header */}

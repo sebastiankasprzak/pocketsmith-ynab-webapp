@@ -95,7 +95,7 @@ export const BalanceComparisonTable: React.FC<BalanceComparisonTableProps> = ({
       return [];
     }
 
-    let filtered = comparisons.filter(comparison => {
+    const filtered = comparisons.filter(comparison => {
       // Search filter - handle undefined account names
       const psAccountName = comparison.pocketsmithAccountName || '';
       const ynabAccountName = comparison.ynabAccountName || '';

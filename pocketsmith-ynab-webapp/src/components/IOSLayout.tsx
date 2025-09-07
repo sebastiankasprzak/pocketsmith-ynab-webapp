@@ -135,7 +135,7 @@ export const IOSLayout = ({ children, title }: IOSLayoutProps) => {
             sx={{ 
               flex: 1, 
               overflow: 'auto',
-              px: 2, // Horizontal padding only
+              px: 0, // Remove horizontal padding - let components handle their own spacing
               pb: 2  // Bottom padding only
             }}
           >

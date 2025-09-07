@@ -17,9 +17,11 @@ import ManualSyncDialog from '../components/ManualSyncDialog';
 import ModernSyncStatusCard from '../components/ModernSyncStatusCard';
 import AccountSyncStateTable from '../components/AccountSyncStateTable';
 import RecentActivityCard from '../components/RecentActivityCard';
-import { IOSNavigationBar } from '../components/IOSNavigationBar';
-import { NotificationPanel } from '../components/NotificationPanel';
-import { IOSButton } from '../components/IOSButton';
+
+import { IOSLayout } from '../components/IOSLayout';
+import { SimpleSyncOverview } from '../components/SimpleSyncOverview';
+import { SimpleRecentActivity } from '../components/SimpleRecentActivity';
+import { SimpleAccountSync } from '../components/SimpleAccountSync';
 import { useIOSDetection } from '../hooks/useIOSDetection';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 
@@ -29,7 +31,6 @@ const AUTO_REFRESH_KEY = 'syncStatus.autoRefresh';
 
 export const SyncStatus: React.FC = () => {
   const { shouldUseIOSExperience } = useIOSDetection();
-  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
   
   // Initialize state from localStorage or defaults
   const [activityHours, setActivityHours] = useState(() => {
@@ -41,6 +42,8 @@ export const SyncStatus: React.FC = () => {
     const saved = localStorage.getItem(AUTO_REFRESH_KEY);
     return saved ? JSON.parse(saved) : true;
   });
+
+
 
   // Manual sync dialog
   const [showManualSyncDialog, setShowManualSyncDialog] = useState(false);
@@ -85,7 +88,6 @@ export const SyncStatus: React.FC = () => {
     try {
       await triggerSyncAsync(options);
       // Data will be automatically refreshed by React Query after mutation
-      // TODO: Implement proper progress tracking
     } catch (error) {
       console.error('Failed to trigger sync:', error);
     }
@@ -93,65 +95,15 @@ export const SyncStatus: React.FC = () => {
 
 
 
-  // Generate notifications based on sync status
-  const notifications = React.useMemo(() => {
-    const notifs = [];
 
-    // Sync state error notifications
-    if (syncStateError) {
-      notifs.push({
-        id: 'sync-state-error',
-        type: 'error' as const,
-        title: 'Unable to load sync status',
-        message: 'There was an error loading the sync status. Please check your connection and try again.',
-        dismissible: true
-      });
-    }
-
-    // Recent activity error notifications
-    if (recentActivityError) {
-      notifs.push({
-        id: 'activity-error',
-        type: 'error' as const,
-        title: 'Unable to load recent activity',
-        message: 'There was an error loading recent sync activity.',
-        dismissible: true
-      });
-    }
-
-    // Sync trigger error notifications
-    if (syncTriggerError) {
-      notifs.push({
-        id: 'sync-trigger-error',
-        type: 'error' as const,
-        title: 'Sync failed to start',
-        message: 'There was an error starting the synchronization process. Please try again.',
-        dismissible: true
-      });
-    }
-
-    // Note: SyncStateOverview doesn't have status/message fields
-    // These notifications would need to be based on other data or removed
-    // For now, commenting out until we have proper status tracking
-
-    // Filter out dismissed notifications
-    return notifs.filter(n => !dismissedNotifications.includes(n.id));
-  }, [
-    syncStateError,
-    recentActivityError,
-    syncTriggerError,
-    dismissedNotifications
-  ]);
-
-  const handleDismissNotification = (id: string) => {
-    setDismissedNotifications(prev => [...prev, id]);
-  };
 
   const handleAutoRefreshToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.checked;
     setAutoRefresh(newValue);
     localStorage.setItem(AUTO_REFRESH_KEY, JSON.stringify(newValue));
   };
+
+
 
   const handleActivityHoursChange = (hours: number) => {
     setActivityHours(hours);
@@ -166,6 +118,64 @@ export const SyncStatus: React.FC = () => {
     );
   }
 
+  // iOS Experience
+  if (shouldUseIOSExperience) {
+    return (
+      <IOSLayout title="Sync Status">
+        <Box sx={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          p: 2,
+          minHeight: 0
+        }}>
+          {/* Error Alerts */}
+          {hasError && (
+            <Alert severity="error" sx={{ 
+              borderRadius: '12px',
+              backgroundColor: '#FF3B30',
+              color: 'white',
+              '& .MuiAlert-icon': {
+                color: 'white'
+              }
+            }}>
+              {syncStateError && <div>Sync State Error: {syncStateError}</div>}
+              {recentActivityError && <div>Recent Activity Error: {recentActivityError}</div>}
+              {syncTriggerError && <div>Sync Trigger Error: {syncTriggerError}</div>}
+            </Alert>
+          )}
+
+          {/* Simple Sync Overview */}
+          {syncStateOverview && (
+            <SimpleSyncOverview
+              syncStateOverview={syncStateOverview}
+              onManualSync={handleSyncTriggered}
+              isRefreshing={isRefreshing}
+              isSyncTriggering={isSyncTriggering}
+              lastUpdated={lastUpdated}
+            />
+          )}
+
+          {/* Simple Recent Activity */}
+          {recentActivity && (
+            <SimpleRecentActivity
+              recentActivity={recentActivity.recent_activity}
+            />
+          )}
+
+          {/* Simple Account Sync Details */}
+          {syncStateOverview && (
+            <SimpleAccountSync
+              accounts={syncStateOverview.accounts}
+            />
+          )}
+        </Box>
+      </IOSLayout>
+    );
+  }
+
+  // Standard Experience
   return (
     <Box sx={{ 
       maxWidth: '100%',
@@ -173,116 +183,68 @@ export const SyncStatus: React.FC = () => {
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      {/* iOS Navigation Bar */}
-      {shouldUseIOSExperience && (
-        <IOSNavigationBar
-          title="Sync Status"
-          large={false}
-          rightAction={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <NotificationPanel
-                notifications={notifications}
-                onDismiss={handleDismissNotification}
-              />
-              <IOSButton
-                variant="plain"
-                size="small"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                hapticFeedback={true}
-                pressAnimation={true}
-              >
-                <Refresh sx={{ fontSize: '20px' }} />
-              </IOSButton>
-            </Box>
-          }
-        />
-      )}
-
-      {/* Standard Header for non-iOS */}
-      {!shouldUseIOSExperience && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-            Sync Status Dashboard
+      {/* Standard Header */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
+          Sync Status Dashboard
+        </Typography>
+        <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
           </Typography>
-          <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
-            </Typography>
-            {isRefreshing && (
-              <Chip 
-                size="small" 
-                label="Refreshing..." 
-                color="primary" 
-                icon={<CircularProgress size={12} />} 
-              />
-            )}
-          </Box>
+          {isRefreshing && (
+            <Chip 
+              size="small" 
+              label="Refreshing..." 
+              color="primary" 
+              icon={<CircularProgress size={12} />} 
+            />
+          )}
         </Box>
-      )}
+      </Box>
 
-      {/* Status info for iOS */}
-      {shouldUseIOSExperience && (
-        <Box sx={{ px: 2, py: 1, mb: 2 }}>
-          <Box display="flex" alignItems="center" gap={2} sx={{ mb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
-            </Typography>
-            {isRefreshing && (
-              <Chip 
-                size="small" 
-                label="Refreshing..." 
-                color="primary" 
-                icon={<CircularProgress size={12} />} 
-              />
-            )}
-          </Box>
-        </Box>
-      )}
-
-      {/* Controls for non-iOS */}
-      {!shouldUseIOSExperience && (
-        <Box 
-          display="flex" 
-          gap={2} 
-          alignItems="center"
-          sx={{
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'stretch', sm: 'center' }
-          }}
+      {/* Controls */}
+      <Box 
+        display="flex" 
+        gap={2} 
+        alignItems="center"
+        sx={{
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          mb: 3
+        }}
+      >
+        <FormControlLabel
+          control={
+            <Switch
+              checked={autoRefresh}
+              onChange={handleAutoRefreshToggle}
+              color="primary"
+            />
+          }
+          label="Auto-refresh"
+        />
+        <Button
+          variant="outlined"
+          startIcon={<Settings />}
+          onClick={handleOpenManualSyncDialog}
+          disabled={isRefreshing || isSyncTriggering}
+          fullWidth={false}
+          sx={{ minWidth: { xs: 'auto', sm: 140 } }}
         >
-          <FormControlLabel
-            control={
-              <Switch
-                checked={autoRefresh}
-                onChange={handleAutoRefreshToggle}
-                color="primary"
-              />
-            }
-            label="Auto-refresh"
-          />
-          <Button
-            variant="outlined"
-            startIcon={<Settings />}
-            onClick={handleOpenManualSyncDialog}
-            disabled={isRefreshing || isSyncTriggering}
-            fullWidth={false}
-            sx={{ minWidth: { xs: 'auto', sm: 140 } }}
-          >
-            Manual Sync
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={isRefreshing ? <CircularProgress size={16} /> : <Refresh />}
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            fullWidth={false}
-            sx={{ minWidth: { xs: 'auto', sm: 100 } }}
-          >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </Box>
-      )}
+          Manual Sync
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={isRefreshing ? <CircularProgress size={16} /> : <Refresh />}
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          fullWidth={false}
+          sx={{ minWidth: { xs: 'auto', sm: 100 } }}
+        >
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </Box>
 
       {hasError && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -331,8 +293,6 @@ export const SyncStatus: React.FC = () => {
         currentQueueDepth={0}
         syncInProgress={isSyncTriggering}
       />
-
-      {/* TODO: Implement proper sync progress tracking */}
     </Box>
   );
 };

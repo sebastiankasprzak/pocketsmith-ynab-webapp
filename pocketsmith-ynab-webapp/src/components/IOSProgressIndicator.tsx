@@ -1,16 +1,30 @@
 import React from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { 
+  Sync as SyncIcon,
+  CheckCircle as CompleteIcon,
+  Error as ErrorIcon,
+  Schedule as PendingIcon
+} from '@mui/icons-material';
+
+export type SyncProgressState = 'idle' | 'syncing' | 'completed' | 'failed' | 'pending';
 
 interface IOSProgressIndicatorProps {
   progress?: number; // 0-100, undefined for indeterminate
-  variant?: 'linear' | 'circular';
+  variant?: 'linear' | 'circular' | 'sync';
   size?: 'small' | 'medium' | 'large';
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
   showLabel?: boolean;
   label?: string;
   thickness?: number;
   className?: string;
+  // Sync-specific props
+  syncState?: SyncProgressState;
+  animated?: boolean;
+  showIcon?: boolean;
+  transitionsCount?: number;
+  estimatedTime?: string;
 }
 
 export const IOSProgressIndicator = ({
@@ -21,12 +35,33 @@ export const IOSProgressIndicator = ({
   showLabel = false,
   label,
   thickness,
-  className = ''
+  className = '',
+  syncState = 'idle',
+  animated = false,
+  showIcon = false,
+  transitionsCount,
+  estimatedTime
 }: IOSProgressIndicatorProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
   const getColorValue = () => {
+    // Override color based on sync state
+    if (syncState && variant === 'sync') {
+      switch (syncState) {
+        case 'syncing':
+          return '#007AFF';
+        case 'completed':
+          return '#34C759';
+        case 'failed':
+          return '#FF3B30';
+        case 'pending':
+          return '#FF9500';
+        default:
+          return isDark ? '#8E8E93' : '#C7C7CC';
+      }
+    }
+
     switch (color) {
       case 'primary':
         return theme.palette.primary.main;
@@ -40,6 +75,38 @@ export const IOSProgressIndicator = ({
         return '#FF3B30';
       default:
         return theme.palette.primary.main;
+    }
+  };
+
+  const getSyncIcon = () => {
+    switch (syncState) {
+      case 'syncing':
+        return <SyncIcon />;
+      case 'completed':
+        return <CompleteIcon />;
+      case 'failed':
+        return <ErrorIcon />;
+      case 'pending':
+        return <PendingIcon />;
+      default:
+        return <SyncIcon />;
+    }
+  };
+
+  const getSyncLabel = () => {
+    if (label) return label;
+    
+    switch (syncState) {
+      case 'syncing':
+        return transitionsCount ? `Syncing ${transitionsCount} transactions` : 'Syncing...';
+      case 'completed':
+        return transitionsCount ? `Completed ${transitionsCount} transactions` : 'Completed';
+      case 'failed':
+        return 'Sync failed';
+      case 'pending':
+        return estimatedTime ? `Starting in ${estimatedTime}` : 'Pending...';
+      default:
+        return 'Ready to sync';
     }
   };
 
@@ -67,7 +134,184 @@ export const IOSProgressIndicator = ({
   };
 
   const clampedProgress = progress !== undefined ? Math.max(0, Math.min(100, progress)) : undefined;
-  const isIndeterminate = progress === undefined;
+  const isIndeterminate = progress === undefined || syncState === 'syncing';
+
+  // Sync variant - specialized for sync operations
+  if (variant === 'sync') {
+    const iconSize = size === 'small' ? 16 : size === 'large' ? 24 : 20;
+    const shouldAnimate = animated || syncState === 'syncing' || syncState === 'pending';
+    
+    return (
+      <Box
+        className={`ios-progress-indicator sync ${className}`}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          p: 2,
+          backgroundColor: isDark ? 'rgba(28, 28, 30, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '12px',
+          border: `1px solid ${isDark ? 'rgba(84, 84, 88, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+        }}
+      >
+        {/* Icon */}
+        {showIcon && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: iconSize + 8,
+              height: iconSize + 8,
+              borderRadius: '50%',
+              backgroundColor: `${getColorValue()}20`,
+              color: getColorValue(),
+              animation: shouldAnimate ? 'syncPulse 2s ease-in-out infinite' : 'none',
+              '@keyframes syncPulse': {
+                '0%': { 
+                  transform: 'scale(1)',
+                  backgroundColor: `${getColorValue()}20`,
+                },
+                '50%': { 
+                  transform: 'scale(1.1)',
+                  backgroundColor: `${getColorValue()}30`,
+                },
+                '100%': { 
+                  transform: 'scale(1)',
+                  backgroundColor: `${getColorValue()}20`,
+                },
+              },
+            }}
+          >
+            {React.cloneElement(getSyncIcon(), {
+              sx: {
+                fontSize: iconSize,
+                animation: syncState === 'syncing' ? 'spin 2s linear infinite' : 'none',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              },
+            })}
+          </Box>
+        )}
+
+        {/* Content */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* Label */}
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 600,
+              color: 'text.primary',
+              mb: 0.5,
+              fontSize: size === 'small' ? '13px' : size === 'large' ? '16px' : '14px',
+            }}
+          >
+            {getSyncLabel()}
+          </Typography>
+
+          {/* Progress bar for determinate progress */}
+          {!isIndeterminate && clampedProgress !== undefined && (
+            <Box sx={{ mb: 1 }}>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: size === 'small' ? 2 : size === 'large' ? 4 : 3,
+                  backgroundColor: isDark 
+                    ? 'rgba(120, 120, 128, 0.24)' 
+                    : 'rgba(120, 120, 128, 0.16)',
+                  borderRadius: '2px',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: `${clampedProgress}%`,
+                    height: '100%',
+                    backgroundColor: getColorValue(),
+                    borderRadius: 'inherit',
+                    transition: 'width 0.5s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+
+          {/* Indeterminate progress bar */}
+          {isIndeterminate && syncState === 'syncing' && (
+            <Box sx={{ mb: 1 }}>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: size === 'small' ? 2 : size === 'large' ? 4 : 3,
+                  backgroundColor: isDark 
+                    ? 'rgba(120, 120, 128, 0.24)' 
+                    : 'rgba(120, 120, 128, 0.16)',
+                  borderRadius: '2px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '30%',
+                    height: '100%',
+                    backgroundColor: getColorValue(),
+                    borderRadius: 'inherit',
+                    animation: 'indeterminateSync 2s ease-in-out infinite',
+                    '@keyframes indeterminateSync': {
+                      '0%': {
+                        transform: 'translateX(-100%)',
+                      },
+                      '50%': {
+                        transform: 'translateX(0%)',
+                      },
+                      '100%': {
+                        transform: 'translateX(400%)',
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+
+          {/* Additional info */}
+          {(estimatedTime || transitionsCount) && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontSize: size === 'small' ? '11px' : size === 'large' ? '13px' : '12px',
+              }}
+            >
+              {estimatedTime && `ETA: ${estimatedTime}`}
+              {estimatedTime && transitionsCount && ' • '}
+              {transitionsCount && `${transitionsCount} items`}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Progress percentage */}
+        {!isIndeterminate && clampedProgress !== undefined && (
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 700,
+              color: getColorValue(),
+              fontSize: size === 'small' ? '12px' : size === 'large' ? '16px' : '14px',
+              minWidth: 'fit-content',
+            }}
+          >
+            {Math.round(clampedProgress)}%
+          </Typography>
+        )}
+      </Box>
+    );
+  }
 
   if (variant === 'circular') {
     return (

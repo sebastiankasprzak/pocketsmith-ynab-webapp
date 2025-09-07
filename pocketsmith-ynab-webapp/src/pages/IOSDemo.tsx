@@ -15,6 +15,7 @@ import { IOSSearchBar } from '../components/IOSSearchBar';
 import { IOSSegmentedControl } from '../components/IOSSegmentedControl';
 import { IOSToggle } from '../components/IOSToggle';
 import { IOSNotification, useIOSNotifications } from '../components/IOSNotification';
+import { useIOSSyncNotifications } from '../components/IOSSyncNotifications';
 import { 
   IOSSpinner, 
   IOSSkeleton, 
@@ -25,6 +26,7 @@ import {
 import { IOSProgressIndicator } from '../components/IOSProgressIndicator';
 import { IOSStatusBadge } from '../components/IOSStatusBadge';
 import { IOSDetectionDemo } from '../components/IOSDetectionDemo';
+import { IOSSyncControls } from '../components/IOSSyncControls';
 
 export const IOSDemo = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -35,6 +37,14 @@ export const IOSDemo = () => {
   const [progress, setProgress] = useState(65);
   
   const { showSuccess, showError, showWarning, showInfo, NotificationContainer } = useIOSNotifications();
+  const { 
+    showSyncStarted, 
+    showSyncProgress, 
+    showSyncCompleted, 
+    showSyncFailed, 
+    showSyncWarning,
+    NotificationContainer: SyncNotificationContainer 
+  } = useIOSSyncNotifications();
 
   const segmentOptions = [
     { value: 'accounts', label: 'Accounts' },
@@ -370,6 +380,90 @@ export const IOSDemo = () => {
           </Box>
         </IOSCard>
 
+        {/* Sync Progress Indicators Demo */}
+        <IOSCard>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Sync Progress Indicators
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Sync Variant Progress */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Sync States:</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <IOSProgressIndicator 
+                  variant="sync"
+                  syncState="syncing"
+                  showIcon={true}
+                  animated={true}
+                  transitionsCount={150}
+                  estimatedTime="2 minutes"
+                />
+                <IOSProgressIndicator 
+                  variant="sync"
+                  syncState="completed"
+                  showIcon={true}
+                  transitionsCount={200}
+                />
+                <IOSProgressIndicator 
+                  variant="sync"
+                  syncState="failed"
+                  showIcon={true}
+                />
+                <IOSProgressIndicator 
+                  variant="sync"
+                  syncState="pending"
+                  showIcon={true}
+                  estimatedTime="5 minutes"
+                />
+              </Box>
+            </Box>
+
+            {/* Sync Status Badges */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Sync Status Badges:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <IOSStatusBadge status="syncing" text="Syncing" animated />
+                <IOSStatusBadge status="completed" text="Completed" />
+                <IOSStatusBadge status="failed" text="Failed" />
+                <IOSStatusBadge status="queued" text="Queued" animated />
+                <IOSStatusBadge status="processing" text="Processing" animated />
+                <IOSStatusBadge status="idle" text="Idle" />
+              </Box>
+            </Box>
+
+            {/* Progress with Sync States */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 2 }}>Progress with Sync Data:</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <IOSProgressIndicator 
+                  variant="sync"
+                  progress={progress}
+                  syncState="syncing"
+                  showIcon={true}
+                  transitionsCount={Math.round(progress * 2)}
+                  estimatedTime={`${Math.round((100 - progress) / 10)} minutes`}
+                />
+                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                  <IOSButton 
+                    variant="secondary" 
+                    size="small"
+                    onClick={() => setProgress(Math.max(0, progress - 10))}
+                  >
+                    -10%
+                  </IOSButton>
+                  <IOSButton 
+                    variant="secondary" 
+                    size="small"
+                    onClick={() => setProgress(Math.min(100, progress + 10))}
+                  >
+                    +10%
+                  </IOSButton>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </IOSCard>
+
         {/* Notification Demo */}
         <IOSCard>
           <Typography variant="h6" sx={{ mb: 2 }}>
@@ -403,6 +497,50 @@ export const IOSDemo = () => {
               onClick={() => showInfo('Info', 'Here is some information')}
             >
               Show Info
+            </IOSButton>
+          </Box>
+        </IOSCard>
+
+        {/* Sync Notifications Demo */}
+        <IOSCard>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Sync Notifications
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <IOSButton 
+              variant="secondary" 
+              fullWidth
+              onClick={() => showSyncStarted('Test Account', 150)}
+            >
+              Show Sync Started
+            </IOSButton>
+            <IOSButton 
+              variant="secondary" 
+              fullWidth
+              onClick={() => showSyncProgress(progress, Math.round(progress * 2), '2 minutes')}
+            >
+              Show Sync Progress
+            </IOSButton>
+            <IOSButton 
+              variant="secondary" 
+              fullWidth
+              onClick={() => showSyncCompleted(200, 'Test Account')}
+            >
+              Show Sync Completed
+            </IOSButton>
+            <IOSButton 
+              variant="secondary" 
+              fullWidth
+              onClick={() => showSyncFailed('Network timeout', 'Test Account')}
+            >
+              Show Sync Failed
+            </IOSButton>
+            <IOSButton 
+              variant="secondary" 
+              fullWidth
+              onClick={() => showSyncWarning('Partial sync completed', 'Test Account')}
+            >
+              Show Sync Warning
             </IOSButton>
           </Box>
         </IOSCard>
@@ -459,6 +597,52 @@ export const IOSDemo = () => {
             </IOSButton>
           </Box>
         </IOSCard>
+
+        {/* Enhanced iOS Sync Controls Demo */}
+        <IOSCard>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Enhanced Sync Controls
+          </Typography>
+          <IOSSyncControls
+            autoRefresh={true}
+            onAutoRefreshToggle={(enabled) => {
+              console.log('Auto-refresh:', enabled);
+              showInfo('Setting Updated', `Auto-refresh ${enabled ? 'enabled' : 'disabled'}`);
+            }}
+            onRefresh={() => {
+              console.log('Refresh triggered');
+              showInfo('Refreshing', 'Data refresh initiated');
+            }}
+            onManualSync={(options) => {
+              console.log('Manual sync:', options);
+              if (options?.forceSync) {
+                showSyncStarted('All Accounts', 500);
+                setTimeout(() => showSyncCompleted(500), 3000);
+              } else {
+                showSyncStarted('Recent Transactions', 50);
+                setTimeout(() => showSyncCompleted(50), 1500);
+              }
+            }}
+            isRefreshing={false}
+            isSyncTriggering={false}
+            lastUpdated={new Date()}
+            syncNotifications={true}
+            onSyncNotificationsToggle={(enabled) => {
+              console.log('Sync notifications:', enabled);
+              showInfo('Notifications', `Sync notifications ${enabled ? 'enabled' : 'disabled'}`);
+            }}
+            backgroundSync={false}
+            onBackgroundSyncToggle={(enabled) => {
+              console.log('Background sync:', enabled);
+              showInfo('Background Sync', `Background sync ${enabled ? 'enabled' : 'disabled'}`);
+            }}
+            syncFrequency="30s"
+            onSyncFrequencyChange={(frequency) => {
+              console.log('Sync frequency:', frequency);
+              showInfo('Frequency Updated', `Sync frequency set to ${frequency}`);
+            }}
+          />
+        </IOSCard>
       </Box>
 
       {/* Bottom Sheet */}
@@ -512,6 +696,10 @@ export const IOSDemo = () => {
           </Box>
         </Box>
       </IOSBottomSheet>
+      
+      {/* Notification Containers */}
+      <NotificationContainer />
+      <SyncNotificationContainer position="top" />
     </IOSLayout>
   );
 };

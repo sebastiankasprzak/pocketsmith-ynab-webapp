@@ -21,7 +21,12 @@ export type IOSStatusType =
   | 'active'
   | 'inactive'
   | 'pending'
-  | 'syncing';
+  | 'syncing'
+  | 'completed'
+  | 'failed'
+  | 'idle'
+  | 'queued'
+  | 'processing';
 
 interface IOSStatusBadgeProps {
   status: IOSStatusType;
@@ -105,6 +110,41 @@ export const IOSStatusBadge = ({
           borderColor: '#007AFF',
           icon: <SyncIcon />,
         };
+      case 'completed':
+        return {
+          color: '#34C759',
+          backgroundColor: isDark ? 'rgba(52, 199, 89, 0.2)' : 'rgba(52, 199, 89, 0.1)',
+          borderColor: '#34C759',
+          icon: <SuccessIcon />,
+        };
+      case 'failed':
+        return {
+          color: '#FF3B30',
+          backgroundColor: isDark ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 59, 48, 0.1)',
+          borderColor: '#FF3B30',
+          icon: <ErrorIcon />,
+        };
+      case 'idle':
+        return {
+          color: isDark ? '#8E8E93' : '#8E8E93',
+          backgroundColor: isDark ? 'rgba(142, 142, 147, 0.2)' : 'rgba(142, 142, 147, 0.1)',
+          borderColor: '#8E8E93',
+          icon: <PauseIcon />,
+        };
+      case 'queued':
+        return {
+          color: '#FF9500',
+          backgroundColor: isDark ? 'rgba(255, 149, 0, 0.2)' : 'rgba(255, 149, 0, 0.1)',
+          borderColor: '#FF9500',
+          icon: <PendingIcon />,
+        };
+      case 'processing':
+        return {
+          color: '#007AFF',
+          backgroundColor: isDark ? 'rgba(0, 122, 255, 0.2)' : 'rgba(0, 122, 255, 0.1)',
+          borderColor: '#007AFF',
+          icon: <SyncIcon />,
+        };
       default: // neutral
         return {
           color: isDark ? '#FFFFFF' : '#000000',
@@ -156,7 +196,7 @@ export const IOSStatusBadge = ({
       sx: {
         fontSize: sizeConfig.iconSize,
         color: variant === 'outlined' || variant === 'minimal' ? statusConfig.color : 'currentColor',
-        animation: animated && (status === 'syncing' || status === 'pending') 
+        animation: animated && (status === 'syncing' || status === 'pending' || status === 'processing') 
           ? 'spin 1s linear infinite' 
           : 'none',
         '@keyframes spin': {
@@ -217,7 +257,7 @@ export const IOSStatusBadge = ({
             height: sizeConfig.iconSize,
             borderRadius: '50%',
             backgroundColor: statusConfig.color,
-            animation: animated && (status === 'syncing' || status === 'pending') 
+            animation: animated && (status === 'syncing' || status === 'pending' || status === 'processing' || status === 'queued') 
               ? 'pulse 2s ease-in-out infinite' 
               : 'none',
             '@keyframes pulse': {
