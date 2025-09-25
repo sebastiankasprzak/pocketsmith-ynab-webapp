@@ -28,6 +28,11 @@ cd ../parameter-store
 npm install --legacy-peer-deps
 npm run build
 cp -r node_modules dist/
+# Skip dashboard for now - will be added later
+# cd ../dashboard
+# npm install --legacy-peer-deps
+# npm run build
+# cp -r node_modules dist/
 cd ../..
 
 # Bootstrap CDK if needed

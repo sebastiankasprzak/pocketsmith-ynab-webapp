@@ -4,8 +4,10 @@ import { PocketSmithClient } from './pocketsmithClient';
 import { YNABClient } from './ynabClient';
 import { APIResponse, ErrorResponse } from './types';
 import { requireAuth, createAuthErrorResponse, AuthError } from './authUtils';
+import { LambdaCache, CacheKeys } from './lambdaCache';
 
 const parameterStore = new ParameterStoreService();
+const cache = LambdaCache.getInstance();
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,10 +43,16 @@ async function handlePocketSmithAccounts(event: APIGatewayProxyEvent): Promise<A
     const user = await requireAuth(event);
     console.log(`Handling PocketSmith accounts request for user: ${user.userId}`);
     
-    const apiKey = await parameterStore.getPocketSmithApiKey();
-    const client = new PocketSmithClient(apiKey);
-    
-    const accounts = await client.getAccounts();
+    // Use cache to avoid repeated API calls
+    const accounts = await cache.getOrFetch(
+      CacheKeys.pocketsmithAccounts(user.userId),
+      async () => {
+        const apiKey = await parameterStore.getPocketSmithApiKey();
+        const client = new PocketSmithClient(apiKey);
+        return await client.getAccounts();
+      },
+      600 // 10 minutes cache for account data (changes infrequently)
+    );
     
     return createResponse(200, {
       accounts,
@@ -74,14 +82,23 @@ async function handleYNABAccounts(event: APIGatewayProxyEvent): Promise<APIGatew
     const user = await requireAuth(event);
     console.log(`Handling YNAB accounts request for user: ${user.userId}`);
     
-    const [apiKey, budgetId] = await Promise.all([
-      parameterStore.getYNABApiKey(),
-      parameterStore.getYNABBudgetId()
-    ]);
+    // Get budget ID first (cached separately as it changes less frequently)
+    const budgetId = await cache.getOrFetch(
+      `ynab_budget:${user.userId}`,
+      () => parameterStore.getYNABBudgetId(),
+      1800 // 30 minutes cache for budget ID
+    );
     
-    const client = new YNABClient(apiKey, budgetId);
-    
-    const accounts = await client.getAccounts();
+    // Use cache for account data
+    const accounts = await cache.getOrFetch(
+      CacheKeys.ynabAccounts(user.userId, budgetId),
+      async () => {
+        const apiKey = await parameterStore.getYNABApiKey();
+        const client = new YNABClient(apiKey, budgetId);
+        return await client.getAccounts();
+      },
+      600 // 10 minutes cache for account data
+    );
     
     return createResponse(200, {
       accounts,

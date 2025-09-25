@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { ParameterStoreService } from './parameterStoreService';
 import { PocketSmithClient, YNABClient } from './apiClients';
 import { CacheService } from './cacheService';
+import { LambdaCache, CacheKeys } from './lambdaCache';
 import { 
   BalanceComparison, 
   BalanceComparisonResult, 
@@ -13,6 +14,7 @@ import { requireAuth, createAuthErrorResponse, AuthError } from './authUtils';
 
 const parameterStore = new ParameterStoreService();
 const cacheService = new CacheService();
+const lambdaCache = LambdaCache.getInstance();
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -76,31 +78,36 @@ function createBalanceComparison(
   };
 }
 
-async function fetchAccountData(useCache: boolean = true): Promise<{
+async function fetchAccountData(userId: string, useCache: boolean = true): Promise<{
   pocketsmithAccounts: PocketSmithAccount[];
   ynabAccounts: YNABAccount[];
   fromCache: boolean;
 }> {
-  // Try to get from cache first if requested
-  if (useCache) {
-    const cachedData = await cacheService.getCachedBalanceData();
-    if (cachedData) {
-      console.log('Using cached balance data');
-      return {
-        pocketsmithAccounts: cachedData.pocketsmithAccounts,
-        ynabAccounts: cachedData.ynabAccounts,
-        fromCache: true
-      };
-    }
+  if (!useCache) {
+    console.log('Cache disabled, fetching fresh data');
+    return await fetchFreshAccountData(userId);
   }
 
+  // Try Lambda cache first (faster than external cache service)
+  return await lambdaCache.getOrFetch(
+    `balance_accounts:${userId}`,
+    () => fetchFreshAccountData(userId),
+    300 // 5 minutes cache for balance data
+  ).then(data => ({ ...data, fromCache: true }));
+}
+
+async function fetchFreshAccountData(userId: string): Promise<{
+  pocketsmithAccounts: PocketSmithAccount[];
+  ynabAccounts: YNABAccount[];
+  fromCache: boolean;
+}> {
   console.log('Fetching fresh balance data from APIs');
 
-  // Fetch credentials
+  // Fetch credentials (cache these too since they're used frequently)
   const [psApiKey, ynabApiKey, ynabBudgetId] = await Promise.all([
-    parameterStore.getPocketSmithApiKey(),
-    parameterStore.getYNABApiKey(),
-    parameterStore.getYNABBudgetId()
+    lambdaCache.getOrFetch(`ps_api_key:${userId}`, () => parameterStore.getPocketSmithApiKey(), 1800),
+    lambdaCache.getOrFetch(`ynab_api_key:${userId}`, () => parameterStore.getYNABApiKey(), 1800),
+    lambdaCache.getOrFetch(`ynab_budget:${userId}`, () => parameterStore.getYNABBudgetId(), 1800)
   ]);
 
   // Create API clients
@@ -113,9 +120,13 @@ async function fetchAccountData(useCache: boolean = true): Promise<{
     ynabClient.getAccounts()
   ]);
 
-  // Cache the results
-  const ttl = await cacheService.getCacheTTL();
-  await cacheService.setCachedBalanceData(pocketsmithAccounts, ynabAccounts, ttl);
+  // Also cache using the existing cache service for persistence
+  try {
+    const ttl = await cacheService.getCacheTTL();
+    await cacheService.setCachedBalanceData(pocketsmithAccounts, ynabAccounts, ttl);
+  } catch (error) {
+    console.warn('Failed to update persistent cache:', error);
+  }
 
   return {
     pocketsmithAccounts,
@@ -135,8 +146,12 @@ async function handleBalanceComparison(event: APIGatewayProxyEvent): Promise<API
 
     // Fetch account mappings and account data
     const [mappingConfig, accountData] = await Promise.all([
-      parameterStore.getAccountMappings(),
-      fetchAccountData(useCache)
+      lambdaCache.getOrFetch(
+        CacheKeys.accountMappings(user.userId),
+        () => parameterStore.getAccountMappings(),
+        600 // 10 minutes cache for mappings
+      ),
+      fetchAccountData(user.userId, useCache)
     ]);
 
     const { pocketsmithAccounts, ynabAccounts, fromCache } = accountData;
@@ -227,11 +242,12 @@ async function handleBalanceRefresh(event: APIGatewayProxyEvent): Promise<APIGat
     const user = await requireAuth(event);
     console.log(`Handling balance refresh request for user: ${user.userId}`);
 
-    // Clear cache to force fresh data
+    // Clear both Lambda cache and persistent cache to force fresh data
+    lambdaCache.invalidate(`.*:${user.userId}`);
     await cacheService.clearCache();
 
     // Fetch fresh data
-    const accountData = await fetchAccountData(false);
+    const accountData = await fetchAccountData(user.userId, false);
 
     return createResponse(200, {
       message: 'Balance data refreshed successfully',

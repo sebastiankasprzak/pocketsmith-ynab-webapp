@@ -50,7 +50,7 @@ export const Dashboard: React.FC = () => {
   const { shouldUseIOSExperience } = useIOSDetection();
   const { triggerHaptic } = useHapticFeedback();
   
-  // Use the custom hook for all dashboard data
+  // Use the existing hook for all dashboard data
   const {
     syncStatus,
     mappingStats,

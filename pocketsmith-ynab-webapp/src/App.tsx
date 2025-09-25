@@ -50,20 +50,22 @@ const PageLoadingFallback = () => (
   </Box>
 );
 
-// Create React Query client with enhanced caching configuration
+// Create React Query client with optimized caching configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for 10 minutes after last use
-      retry: 1,
+      staleTime: 10 * 60 * 1000, // 10 minutes - data stays fresh longer (backend has caching now)
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer
+      retry: 2, // Increased retry attempts
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
       refetchOnWindowFocus: false, // Don't refetch when window regains focus
       refetchOnMount: 'stale', // Only refetch on mount if data is stale
       refetchOnReconnect: 'stale', // Only refetch on reconnect if data is stale
       refetchInterval: false, // Disable automatic background refetching by default
     },
     mutations: {
-      retry: 1,
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
   },
 });

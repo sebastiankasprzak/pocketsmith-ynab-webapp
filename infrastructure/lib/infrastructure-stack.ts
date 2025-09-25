@@ -243,6 +243,8 @@ export class InfrastructureStack extends cdk.Stack {
       }
     });
 
+    // Dashboard Lambda will be added later after basic caching is working
+
     // API Gateway resource structure
     const accountsResource = api.root.addResource('accounts');
     const pocketsmithAccountsResource = accountsResource.addResource('pocketsmith');
@@ -282,6 +284,8 @@ export class InfrastructureStack extends cdk.Stack {
     const balancesResource = api.root.addResource('balances');
     const balancesCompareResource = balancesResource.addResource('compare');
     const balancesRefreshResource = balancesResource.addResource('refresh');
+
+    // Dashboard resource will be added later
 
     // Create Cognito authorizer for API Gateway
     const cognitoAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
@@ -409,6 +413,8 @@ export class InfrastructureStack extends cdk.Stack {
       authorizer: cognitoAuthorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO
     });
+
+    // Dashboard endpoint will be added later
 
     // Add health check endpoint without authentication
     healthResource.addMethod('GET', new apigateway.MockIntegration({

@@ -81,7 +81,7 @@ export class DynamoDbSyncStateService {
    * Fetch PocketSmith accounts and cache account names
    */
   private async fetchAccountNames(): Promise<void> {
-    // Check if cache is still valid (5 minutes)
+    // Check if cache is still valid (15 minutes - increased from 5)
     if (Date.now() < this.cacheExpiry) {
       console.log('Account names cache is still valid, skipping fetch');
       return;
@@ -139,8 +139,8 @@ export class DynamoDbSyncStateService {
         console.log(`Cached account ${account.id}: "${accountName}"`);
       });
 
-      // Set cache expiry to 5 minutes from now
-      this.cacheExpiry = Date.now() + (5 * 60 * 1000);
+      // Set cache expiry to 15 minutes from now (account names change rarely)
+      this.cacheExpiry = Date.now() + (15 * 60 * 1000);
       
       console.log(`Successfully cached ${accounts.length} account names, cache expires at ${new Date(this.cacheExpiry).toISOString()}`);
     } catch (error) {

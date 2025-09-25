@@ -189,22 +189,23 @@ export const useDashboardData = () => {
     refetchInterval: false // No auto-refresh, manual only
   });
 
-  // Fetch sync state and recent activity with better caching
+  // Fetch sync state and recent activity with optimized caching (backend now has caching)
   const syncStateQuery = useQuery({
     queryKey: queryKeys.syncOverview(),
     queryFn: () => syncApiService.getSyncStateOverview(),
-    staleTime: 30 * 1000, // 30 seconds - sync state changes frequently
-    gcTime: 2 * 60 * 1000, // 2 minutes in cache
-    refetchInterval: 60 * 1000, // Check every minute instead of 30 seconds
-    retry: 1
+    staleTime: 2 * 60 * 1000, // 2 minutes - backend has caching now
+    gcTime: 10 * 60 * 1000, // 10 minutes in cache
+    refetchInterval: 5 * 60 * 1000, // Check every 5 minutes instead of 1 minute
+    retry: 2
   });
 
   const recentActivityQuery = useQuery({
     queryKey: queryKeys.recentActivity(24),
     queryFn: () => syncApiService.getRecentActivity(24), // Last 24 hours
-    staleTime: 2 * 60 * 1000, // 2 minutes - activity doesn't change as frequently
-    gcTime: 5 * 60 * 1000, // 5 minutes in cache
-    retry: 1
+    staleTime: 5 * 60 * 1000, // 5 minutes - backend has caching now
+    gcTime: 15 * 60 * 1000, // 15 minutes in cache
+    refetchInterval: 10 * 60 * 1000, // Check every 10 minutes
+    retry: 2
   });
 
   // Transform data for dashboard

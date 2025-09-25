@@ -12,8 +12,8 @@ export const useAccounts = () => {
   return useQuery<AccountsResponse>({
     queryKey: queryKeys.accountsData(),
     queryFn: accountsApi.fetchAccounts,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes - backend has caching now
+    gcTime: 30 * 60 * 1000, // 30 minutes
     retry: 2,
   });
 };
@@ -23,8 +23,8 @@ export const useMappings = () => {
   return useQuery<MappingsResponse>({
     queryKey: queryKeys.mappingsData(),
     queryFn: accountsApi.fetchMappings,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - backend has caching now
+    gcTime: 20 * 60 * 1000, // 20 minutes
     retry: 2,
   });
 };
