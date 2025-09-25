@@ -8,7 +8,8 @@ import {
   Chip,
   Alert,
   Grid,
-  Badge
+  Badge,
+  IconButton
 } from '@mui/material';
 import {
   AccountTree,
@@ -260,27 +261,41 @@ export const Dashboard: React.FC = () => {
   // Render iOS-style dashboard
   const renderIOSDashboard = () => (
     <Box>
-        <IOSNavigationBar
-          title="Dashboard"
-          large={false}
-          rightAction={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <NotificationPanel
-                notifications={notifications}
-                onDismiss={handleDismissNotification}
-              />
-              <IOSButton
-                variant="plain"
-                size="small"
-                onClick={handleRefreshWithFeedback}
-                hapticFeedback={true}
-                pressAnimation={true}
-              >
-                <Refresh sx={{ fontSize: '20px' }} />
-              </IOSButton>
-            </Box>
-          }
-        />
+        {/* Top action bar without title - notifications and refresh only */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          alignItems: 'center', 
+          p: 2, 
+          gap: 1,
+          position: 'sticky',
+          top: 0,
+          backgroundColor: 'background.default',
+          zIndex: 1
+        }}>
+          <NotificationPanel
+            notifications={notifications}
+            onDismiss={handleDismissNotification}
+          />
+          <IconButton
+            onClick={handleRefreshWithFeedback}
+            size="small"
+            sx={{
+              color: 'text.primary',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+                transform: 'scale(1.05)'
+              },
+              '&:active': {
+                transform: 'scale(0.95)'
+              }
+            }}
+            aria-label="Refresh dashboard data"
+          >
+            <Refresh sx={{ fontSize: '20px' }} />
+          </IconButton>
+        </Box>
 
 
         {/* Sync Status Section - iOS Grouped List Format */}
@@ -701,20 +716,24 @@ export const Dashboard: React.FC = () => {
               notifications={notifications}
               onDismiss={handleDismissNotification}
             />
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Refresh />}
+            <IconButton
               onClick={handleRefreshWithFeedback}
+              size="small"
               sx={{
-                transition: 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                color: 'text.primary',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  transform: 'scale(1.05)'
+                },
                 '&:active': {
-                  transform: 'scale(0.96)',
+                  transform: 'scale(0.95)'
                 }
               }}
+              aria-label="Refresh dashboard data"
             >
-              Refresh
-            </Button>
+              <Refresh />
+            </IconButton>
           </Box>
         </Box>
       </Box>
