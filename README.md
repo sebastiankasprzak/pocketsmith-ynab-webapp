@@ -7,6 +7,9 @@ A React web application that provides a management interface for the existing Po
 ```
 ├── pocketsmith-ynab-webapp/    # React TypeScript webapp with Vite
 ├── infrastructure/             # AWS CDK infrastructure as code
+├── docs/                       # Implementation guides and documentation
+├── scripts/                    # Utility scripts for testing and debugging
+├── deploy_wrapper.sh          # Main deployment script
 └── README.md                  # This file
 ```
 
@@ -174,6 +177,11 @@ The application logs comprehensive API configuration details to the console, inc
 - Base URL configuration
 
 This makes it easy to troubleshoot API configuration issues during development and deployment.
+
+## Documentation & Scripts
+
+- **Documentation**: See `docs/` directory for implementation guides, troubleshooting, and feature documentation
+- **Utility Scripts**: See `scripts/` directory for debugging and testing utilities
 
 ## Development Commands
 
