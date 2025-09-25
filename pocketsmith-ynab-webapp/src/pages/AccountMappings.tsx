@@ -25,6 +25,7 @@ import {
   Zoom,
   alpha,
   Fab,
+  IconButton,
 } from '@mui/material';
 import { SafeSelect } from '../components/SafeSelect';
 import {
@@ -43,7 +44,7 @@ import { IOSCard } from '../components/IOSCard';
 import { IOSListItem, createDeleteAction, createContextEditAction, createContextDeleteAction, createContextDuplicateAction } from '../components/IOSListItem';
 import { IOSButton } from '../components/IOSButton';
 import { IOSMetricCard } from '../components/IOSMetricCard';
-import { IOSNavigationBar } from '../components/IOSNavigationBar';
+
 import { NotificationPanel } from '../components/NotificationPanel';
 import { IOSFloatingActionButton } from '../components/IOSFloatingActionButton';
 import { IOSMappingCreationModal } from '../components/IOSMappingCreationModal';
@@ -139,7 +140,7 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
           Create New Account Mapping
         </Box>
       </DialogTitle>
-      
+
       <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: { xs: 3, sm: 4 } }}>
         <Stack spacing={4}>
           {/* PocketSmith Account Selection */}
@@ -283,7 +284,7 @@ const NewMappingDialog: React.FC<NewMappingDialogProps> = ({
           )}
         </Stack>
       </DialogContent>
-      
+
       <DialogActions sx={{
         px: { xs: 3, sm: 4 },
         pb: { xs: 3, sm: 3 },
@@ -327,7 +328,7 @@ export const AccountMappings: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
   const [selectionMode, setSelectionMode] = useState(false);
   const [editingMapping, setEditingMapping] = useState<string | null>(null);
-  
+
   // iOS Action Sheet and Dialog states
   const [bulkActionSheetOpen, setBulkActionSheetOpen] = useState(false);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
@@ -338,10 +339,10 @@ export const AccountMappings: React.FC = () => {
     destructive?: boolean;
   } | null>(null);
   const [asyncOperationLoading, setAsyncOperationLoading] = useState(false);
-  
+
   // iOS Notifications
   const { showSuccess, showError, NotificationContainer } = useIOSNotifications();
-  
+
   // Notification panel state
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
 
@@ -461,7 +462,7 @@ export const AccountMappings: React.FC = () => {
 
   const handleDeleteMapping = async (pocketsmithAccountId: string) => {
     const mapping = mappingsData?.mappings?.find(m => m.pocketsmithAccountId === pocketsmithAccountId);
-    
+
     // Show confirmation dialog for destructive action
     setConfirmationAction({
       title: 'Delete Mapping?',
@@ -501,7 +502,7 @@ export const AccountMappings: React.FC = () => {
   const handleBulkDelete = async () => {
     const selectedIds = Array.from(selectionState.selectedItems);
     const selectedCount = selectedIds.length;
-    
+
     // Show confirmation dialog for destructive action
     setConfirmationAction({
       title: `Delete ${selectedCount} ${selectedCount === 1 ? 'Mapping' : 'Mappings'}?`,
@@ -559,7 +560,7 @@ export const AccountMappings: React.FC = () => {
     if (pendingMappings.length === 0) return;
 
     setAsyncOperationLoading(true);
-    
+
     try {
       // First, perform client-side validation
       if (accountsData && mappingsData && mappingsData.mappings) {
@@ -575,7 +576,7 @@ export const AccountMappings: React.FC = () => {
         });
 
         if (!clientValidation.valid) {
-          const errorMessage = clientValidation.errors && clientValidation.errors.length > 0 
+          const errorMessage = clientValidation.errors && clientValidation.errors.length > 0
             ? clientValidation.errors.join(', ')
             : 'Unknown validation error';
           showError('Validation Failed', errorMessage);
@@ -592,7 +593,7 @@ export const AccountMappings: React.FC = () => {
       const serverValidation = await validateMappingsMutation.mutateAsync(pendingMappings);
 
       if (!serverValidation.valid) {
-        const errorMessage = serverValidation.errors && serverValidation.errors.length > 0 
+        const errorMessage = serverValidation.errors && serverValidation.errors.length > 0
           ? serverValidation.errors.join(', ')
           : 'Unknown validation error';
         showError('Server Validation Failed', errorMessage);
@@ -658,16 +659,16 @@ export const AccountMappings: React.FC = () => {
   // Render iOS-style layout when appropriate
   if (shouldUseIOSExperience) {
     return (
-      <IOSLoadingOverlay 
+      <IOSLoadingOverlay
         loading={asyncOperationLoading}
         message="Processing..."
       >
-        <Box sx={{ 
-          position: 'relative', 
+        <Box sx={{
+          position: 'relative',
           // Add extra bottom padding to account for FAB (56px) + margin (16px) + tab bar (55px) + safe area
           // Add extra padding for bulk actions toolbar when visible (80px)
           pb: isMobile ? (
-            selectionMode && selectionState.selectedCount > 0 
+            selectionMode && selectionState.selectedCount > 0
               ? 'calc(56px + 16px + 55px + 80px + env(safe-area-inset-bottom, 0px) + 16px)'
               : 'calc(56px + 16px + 55px + env(safe-area-inset-bottom, 0px) + 16px)'
           ) : 0,
@@ -676,21 +677,35 @@ export const AccountMappings: React.FC = () => {
           overflow: 'hidden',
           boxSizing: 'border-box'
         }}>
-        {/* iOS Navigation Bar */}
-        <IOSNavigationBar
-          title={selectionMode ? `${selectionState.selectedCount} Selected` : "Account Mappings"}
-          large={!selectionMode}
-          leftAction={selectionMode ? (
-            <IOSButton
-              variant="plain"
-              size="small"
-              onClick={handleCancelSelection}
-            >
-              Cancel
-            </IOSButton>
-          ) : undefined}
-          rightAction={
-            selectionMode ? (
+          {/* Top action bar without title - notifications and actions only */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: selectionMode ? 'space-between' : 'flex-end',
+            alignItems: 'center', 
+            p: 2, 
+            gap: 1,
+            position: 'sticky',
+            top: 0,
+            backgroundColor: 'background.default',
+            zIndex: 1
+          }}>
+            {selectionMode && (
+              <IOSButton
+                variant="plain"
+                size="small"
+                onClick={handleCancelSelection}
+              >
+                Cancel
+              </IOSButton>
+            )}
+            
+            {selectionMode && (
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {selectionState.selectedCount} Selected
+              </Typography>
+            )}
+            
+            {selectionMode ? (
               <IOSButton
                 variant="plain"
                 size="small"
@@ -713,304 +728,314 @@ export const AccountMappings: React.FC = () => {
                     Select
                   </IOSButton>
                 )}
-                <IOSButton
-                  variant="plain"
-                  size="small"
+                <IconButton
                   onClick={handleRefresh}
+                  size="small"
                   disabled={isLoading}
-                >
-                  <RefreshIcon sx={{ fontSize: '20px' }} />
-                </IOSButton>
-              </Box>
-            )
-          }
-        />
-
-        {/* Statistics Section */}
-        <IOSSection title="Statistics" grouped={false}>
-          <Grid container spacing={2}>
-            <Grid item xs={6} sm={3}>
-              <IOSMetricCard
-                value={totalMappings}
-                label="Total Mappings"
-                color="primary"
-                icon={<BankIcon />}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <IOSMetricCard
-                value={mappingsData?.mappings?.filter(m => m.isActive).length || 0}
-                label="Active"
-                color="success"
-                icon={<CheckCircleIcon />}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <IOSMetricCard
-                value={pendingMappings.length}
-                label="Pending"
-                color="warning"
-                icon={<TrendingUpIcon />}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <IOSMetricCard
-                value={availableAccounts.pocketsmith.length}
-                label="Available"
-                color="info"
-                icon={<AddIcon />}
-              />
-            </Grid>
-          </Grid>
-        </IOSSection>
-
-        {/* Account Mappings Section */}
-        <IOSSection 
-          title={`Account Mappings (${totalMappings})`}
-          headerAction={
-            pendingMappings.length > 0 ? (
-              <IOSButton
-                variant="primary"
-                size="small"
-                onClick={handleSaveMappings}
-                disabled={saveMappingsMutation.isPending}
-              >
-                Save ({pendingMappings.length})
-              </IOSButton>
-            ) : undefined
-          }
-        >
-          {(!mappingsData?.mappings || mappingsData.mappings.length === 0) && pendingMappings.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
-              <BankIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No Account Mappings
-              </Typography>
-              <Typography color="text.secondary" sx={{ mb: 3 }}>
-                Create your first mapping to start syncing accounts between PocketSmith and YNAB.
-              </Typography>
-              <IOSButton
-                variant="primary"
-                onClick={() => setNewMappingDialogOpen(true)}
-                disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
-              >
-                Create First Mapping
-              </IOSButton>
-              {(availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0) && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                  {availableAccounts.pocketsmith.length === 0 && availableAccounts.ynab.length === 0
-                    ? 'No accounts available from either PocketSmith or YNAB'
-                    : availableAccounts.pocketsmith.length === 0
-                    ? 'No PocketSmith accounts available'
-                    : 'No YNAB accounts available'
-                  }
-                </Typography>
-              )}
-            </Box>
-          ) : (
-            <>
-              {/* Existing mappings */}
-              {mappingsData?.mappings?.map((mapping) => (
-                <IOSListItem
-                  key={mapping.pocketsmithAccountId}
-                  leftIcon={!selectionMode ? <BankIcon color="primary" /> : undefined}
-                  showDisclosure={!selectionMode}
-                  selectable={selectionMode}
-                  selected={selectionState.isSelected(mapping.pocketsmithAccountId)}
-                  onSelectionChange={(selected) => {
-                    if (selected) {
-                      selectionState.toggleSelection(mapping.pocketsmithAccountId);
-                    } else {
-                      selectionState.toggleSelection(mapping.pocketsmithAccountId);
+                  sx={{
+                    color: 'text.primary',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                      transform: 'scale(1.05)'
+                    },
+                    '&:active': {
+                      transform: 'scale(0.95)'
                     }
                   }}
-                  swipeActions={!selectionMode ? [
-                    createDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId))
-                  ] : []}
-                  contextMenuActions={!selectionMode ? [
-                    createContextEditAction(() => handleEditMapping(mapping.pocketsmithAccountId)),
-                    createContextDuplicateAction(() => handleDuplicateMapping(mapping)),
-                    createContextDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId)),
-                  ] : []}
-                  divider={true}
+                  aria-label="Refresh account data"
                 >
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {mapping.pocketsmithAccountName}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      → {mapping.ynabAccountName}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: mapping.isActive ? 'success.main' : 'text.secondary',
-                        fontWeight: 500 
-                      }}
-                    >
-                      {mapping.isActive ? 'Active' : 'Inactive'}
-                    </Typography>
-                  </Box>
-                </IOSListItem>
-              ))}
+                  <RefreshIcon sx={{ fontSize: '20px' }} />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
 
-              {/* Pending mappings */}
-              {pendingMappings.map((mapping, index) => {
-                const psAccount = accountsData?.pocketsmithAccounts.find(
-                  a => a.id.toString() === mapping.pocketsmithAccountId
-                );
-                const ynabAccount = accountsData?.ynabAccounts.find(
-                  a => a.id === mapping.ynabAccountId
-                );
+          {/* Statistics Section */}
+          <IOSSection title="Statistics" grouped={false}>
+            <Grid container spacing={2}>
+              <Grid item xs={6} sm={3}>
+                <IOSMetricCard
+                  value={totalMappings}
+                  label="Total Mappings"
+                  color="primary"
+                  icon={<BankIcon />}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <IOSMetricCard
+                  value={mappingsData?.mappings?.filter(m => m.isActive).length || 0}
+                  label="Active"
+                  color="success"
+                  icon={<CheckCircleIcon />}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <IOSMetricCard
+                  value={pendingMappings.length}
+                  label="Pending"
+                  color="warning"
+                  icon={<TrendingUpIcon />}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <IOSMetricCard
+                  value={availableAccounts.pocketsmith.length}
+                  label="Available"
+                  color="info"
+                  icon={<AddIcon />}
+                />
+              </Grid>
+            </Grid>
+          </IOSSection>
 
-                return (
+          {/* Account Mappings Section */}
+          <IOSSection
+            title={`Account Mappings (${totalMappings})`}
+            headerAction={
+              pendingMappings.length > 0 ? (
+                <IOSButton
+                  variant="primary"
+                  size="small"
+                  onClick={handleSaveMappings}
+                  disabled={saveMappingsMutation.isPending}
+                >
+                  Save ({pendingMappings.length})
+                </IOSButton>
+              ) : undefined
+            }
+          >
+            {(!mappingsData?.mappings || mappingsData.mappings.length === 0) && pendingMappings.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
+                <BankIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No Account Mappings
+                </Typography>
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                  Create your first mapping to start syncing accounts between PocketSmith and YNAB.
+                </Typography>
+                <IOSButton
+                  variant="primary"
+                  onClick={() => setNewMappingDialogOpen(true)}
+                  disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
+                >
+                  Create First Mapping
+                </IOSButton>
+                {(availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0) && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                    {availableAccounts.pocketsmith.length === 0 && availableAccounts.ynab.length === 0
+                      ? 'No accounts available from either PocketSmith or YNAB'
+                      : availableAccounts.pocketsmith.length === 0
+                        ? 'No PocketSmith accounts available'
+                        : 'No YNAB accounts available'
+                    }
+                  </Typography>
+                )}
+              </Box>
+            ) : (
+              <>
+                {/* Existing mappings */}
+                {mappingsData?.mappings?.map((mapping) => (
                   <IOSListItem
-                    key={`pending-${index}`}
-                    leftIcon={<AddIcon color="warning" />}
-                    swipeActions={[createDeleteAction(() => handleRemovePendingMapping(index))]}
+                    key={mapping.pocketsmithAccountId}
+                    leftIcon={!selectionMode ? <BankIcon color="primary" /> : undefined}
+                    showDisclosure={!selectionMode}
+                    selectable={selectionMode}
+                    selected={selectionState.isSelected(mapping.pocketsmithAccountId)}
+                    onSelectionChange={(selected) => {
+                      if (selected) {
+                        selectionState.toggleSelection(mapping.pocketsmithAccountId);
+                      } else {
+                        selectionState.toggleSelection(mapping.pocketsmithAccountId);
+                      }
+                    }}
+                    swipeActions={!selectionMode ? [
+                      createDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId))
+                    ] : []}
+                    contextMenuActions={!selectionMode ? [
+                      createContextEditAction(() => handleEditMapping(mapping.pocketsmithAccountId)),
+                      createContextDuplicateAction(() => handleDuplicateMapping(mapping)),
+                      createContextDeleteAction(() => handleDeleteMapping(mapping.pocketsmithAccountId)),
+                    ] : []}
                     divider={true}
                   >
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {psAccount?.title || 'Unknown Account'}
+                        {mapping.pocketsmithAccountName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        → {ynabAccount?.name || 'Unknown Account'}
+                        → {mapping.ynabAccountName}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: 'warning.main',
-                          fontWeight: 500 
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: mapping.isActive ? 'success.main' : 'text.secondary',
+                          fontWeight: 500
                         }}
                       >
-                        Pending
+                        {mapping.isActive ? 'Active' : 'Inactive'}
                       </Typography>
                     </Box>
                   </IOSListItem>
-                );
-              })}
-            </>
-          )}
-        </IOSSection>
+                ))}
 
-        {/* Configuration Settings Section */}
-        {mappingsData?.config && accountsData?.ynabAccounts && (
-          <IOSSection title="Mapping Settings" grouped={false}>
+                {/* Pending mappings */}
+                {pendingMappings.map((mapping, index) => {
+                  const psAccount = accountsData?.pocketsmithAccounts.find(
+                    a => a.id.toString() === mapping.pocketsmithAccountId
+                  );
+                  const ynabAccount = accountsData?.ynabAccounts.find(
+                    a => a.id === mapping.ynabAccountId
+                  );
+
+                  return (
+                    <IOSListItem
+                      key={`pending-${index}`}
+                      leftIcon={<AddIcon color="warning" />}
+                      swipeActions={[createDeleteAction(() => handleRemovePendingMapping(index))]}
+                      divider={true}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {psAccount?.title || 'Unknown Account'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          → {ynabAccount?.name || 'Unknown Account'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'warning.main',
+                            fontWeight: 500
+                          }}
+                        >
+                          Pending
+                        </Typography>
+                      </Box>
+                    </IOSListItem>
+                  );
+                })}
+              </>
+            )}
+          </IOSSection>
+
+          {/* Configuration Settings Section */}
+          {mappingsData?.config && accountsData?.ynabAccounts && (
+            <IOSSection title="Mapping Settings" grouped={false}>
+              <Box sx={{ mx: 2 }}>
+                <MappingConfigurationCard
+                  config={mappingsData.config}
+                  ynabAccounts={accountsData.ynabAccounts}
+                  onSave={handleConfigSave}
+                  isLoading={isLoading}
+                />
+              </Box>
+            </IOSSection>
+          )}
+
+          {/* Budget Selection Section */}
+          <IOSSection title="Budget Configuration" grouped={false}>
             <Box sx={{ mx: 2 }}>
-              <MappingConfigurationCard
-                config={mappingsData.config}
-                ynabAccounts={accountsData.ynabAccounts}
-                onSave={handleConfigSave}
-                isLoading={isLoading}
+              <BudgetSelector
+                currentBudgetId={accountsData?.currentBudgetId}
+                onBudgetChange={() => {
+                  refetchAccounts();
+                  refetchMappings();
+                }}
               />
             </Box>
           </IOSSection>
-        )}
 
-        {/* Budget Selection Section */}
-        <IOSSection title="Budget Configuration" grouped={false}>
-          <Box sx={{ mx: 2 }}>
-            <BudgetSelector 
-              currentBudgetId={accountsData?.currentBudgetId}
-              onBudgetChange={() => {
-                refetchAccounts();
-                refetchMappings();
-              }}
-            />
-          </Box>
-        </IOSSection>
-
-        {/* iOS Floating Action Button */}
-        <IOSFloatingActionButton
-          onClick={() => setNewMappingDialogOpen(true)}
-          disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
-        >
-          <AddIcon />
-        </IOSFloatingActionButton>
-
-        {/* iOS Mapping Creation Modal */}
-        <IOSMappingCreationModal
-          open={newMappingDialogOpen}
-          onClose={() => setNewMappingDialogOpen(false)}
-          onSave={handleAddMapping}
-          availablePocketSmithAccounts={availableAccounts.pocketsmith}
-          availableYnabAccounts={availableAccounts.ynab}
-        />
-
-        {/* Bulk Actions Toolbar */}
-        <IOSBulkActionsToolbar
-          selectedCount={selectionState.selectedCount}
-          visible={selectionMode && selectionState.selectedCount > 0}
-          onCancel={handleCancelSelection}
-          actions={[
-            {
-              label: 'Actions',
-              icon: <SelectAllIcon />,
-              onAction: handleBulkActions,
-            },
-          ]}
-        />
-
-        {/* iOS Action Sheet for Bulk Operations */}
-        <IOSActionSheet
-          open={bulkActionSheetOpen}
-          onClose={() => setBulkActionSheetOpen(false)}
-          title="Bulk Actions"
-          message={`${selectionState.selectedCount} ${selectionState.selectedCount === 1 ? 'mapping' : 'mappings'} selected`}
-          actions={[
-            {
-              label: `Delete ${selectionState.selectedCount} ${selectionState.selectedCount === 1 ? 'Mapping' : 'Mappings'}`,
-              onPress: () => {
-                setBulkActionSheetOpen(false);
-                handleBulkDelete();
-              },
-              destructive: true,
-            },
-          ]}
-        />
-
-        {/* iOS Confirmation Dialog */}
-        <IOSConfirmationDialog
-          open={confirmationDialogOpen}
-          onClose={() => {
-            setConfirmationDialogOpen(false);
-            setConfirmationAction(null);
-          }}
-          onConfirm={() => {
-            if (confirmationAction) {
-              confirmationAction.action();
-            }
-            setConfirmationDialogOpen(false);
-            setConfirmationAction(null);
-          }}
-          title={confirmationAction?.title || ''}
-          message={confirmationAction?.message}
-          destructive={confirmationAction?.destructive}
-          loading={asyncOperationLoading}
-        />
-
-        {/* iOS Notifications */}
-        <NotificationContainer />
-
-        {/* Snackbar for notifications */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={6000}
-          onClose={() => setSnackbarOpen(false)}
-        >
-          <Alert
-            onClose={() => setSnackbarOpen(false)}
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
+          {/* iOS Floating Action Button */}
+          <IOSFloatingActionButton
+            onClick={() => setNewMappingDialogOpen(true)}
+            disabled={availableAccounts.pocketsmith.length === 0 || availableAccounts.ynab.length === 0}
           >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
+            <AddIcon />
+          </IOSFloatingActionButton>
+
+          {/* iOS Mapping Creation Modal */}
+          <IOSMappingCreationModal
+            open={newMappingDialogOpen}
+            onClose={() => setNewMappingDialogOpen(false)}
+            onSave={handleAddMapping}
+            availablePocketSmithAccounts={availableAccounts.pocketsmith}
+            availableYnabAccounts={availableAccounts.ynab}
+          />
+
+          {/* Bulk Actions Toolbar */}
+          <IOSBulkActionsToolbar
+            selectedCount={selectionState.selectedCount}
+            visible={selectionMode && selectionState.selectedCount > 0}
+            onCancel={handleCancelSelection}
+            actions={[
+              {
+                label: 'Actions',
+                icon: <SelectAllIcon />,
+                onAction: handleBulkActions,
+              },
+            ]}
+          />
+
+          {/* iOS Action Sheet for Bulk Operations */}
+          <IOSActionSheet
+            open={bulkActionSheetOpen}
+            onClose={() => setBulkActionSheetOpen(false)}
+            title="Bulk Actions"
+            message={`${selectionState.selectedCount} ${selectionState.selectedCount === 1 ? 'mapping' : 'mappings'} selected`}
+            actions={[
+              {
+                label: `Delete ${selectionState.selectedCount} ${selectionState.selectedCount === 1 ? 'Mapping' : 'Mappings'}`,
+                onPress: () => {
+                  setBulkActionSheetOpen(false);
+                  handleBulkDelete();
+                },
+                destructive: true,
+              },
+            ]}
+          />
+
+          {/* iOS Confirmation Dialog */}
+          <IOSConfirmationDialog
+            open={confirmationDialogOpen}
+            onClose={() => {
+              setConfirmationDialogOpen(false);
+              setConfirmationAction(null);
+            }}
+            onConfirm={() => {
+              if (confirmationAction) {
+                confirmationAction.action();
+              }
+              setConfirmationDialogOpen(false);
+              setConfirmationAction(null);
+            }}
+            title={confirmationAction?.title || ''}
+            message={confirmationAction?.message}
+            destructive={confirmationAction?.destructive}
+            loading={asyncOperationLoading}
+          />
+
+          {/* iOS Notifications */}
+          <NotificationContainer />
+
+          {/* Snackbar for notifications */}
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
+            onClose={() => setSnackbarOpen(false)}
+          >
+            <Alert
+              onClose={() => setSnackbarOpen(false)}
+              severity={snackbarSeverity}
+              sx={{ width: '100%' }}
+            >
+              {snackbarMessage}
+            </Alert>
+          </Snackbar>
         </Box>
       </IOSLoadingOverlay>
     );
@@ -1018,8 +1043,8 @@ export const AccountMappings: React.FC = () => {
 
   // Fallback to original Material-UI layout for non-iOS devices
   return (
-    <Box sx={{ 
-      position: 'relative', 
+    <Box sx={{
+      position: 'relative',
       pb: isMobile ? 8 : 0, // Reduced padding for non-iOS layout
       width: '100%',
       maxWidth: '100%',
@@ -1139,10 +1164,10 @@ export const AccountMappings: React.FC = () => {
         </Box>
 
         {/* Action Buttons */}
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          spacing={2} 
-          sx={{ 
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{
             justifyContent: 'flex-end',
             alignItems: { xs: 'stretch', sm: 'center' }
           }}
@@ -1215,8 +1240,8 @@ export const AccountMappings: React.FC = () => {
                     {availableAccounts.pocketsmith.length === 0 && availableAccounts.ynab.length === 0
                       ? 'No accounts available from either PocketSmith or YNAB'
                       : availableAccounts.pocketsmith.length === 0
-                      ? 'No PocketSmith accounts available'
-                      : 'No YNAB accounts available'
+                        ? 'No PocketSmith accounts available'
+                        : 'No YNAB accounts available'
                     }
                   </Typography>
                 )}
@@ -1225,12 +1250,12 @@ export const AccountMappings: React.FC = () => {
               <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
                 {/* Existing mappings */}
                 {mappingsData?.mappings?.map((mapping) => (
-                  <Grid 
-                    item 
-                    xs={12} 
-                    sm={6} 
-                    lg={4} 
-                    key={mapping.pocketsmithAccountId} 
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    lg={4}
+                    key={mapping.pocketsmithAccountId}
                     sx={{ display: 'flex', height: 'auto' }}
                   >
                     <Box sx={{ width: '100%', display: 'flex' }}>
@@ -1261,12 +1286,12 @@ export const AccountMappings: React.FC = () => {
                   };
 
                   return (
-                    <Grid 
-                      item 
-                      xs={12} 
-                      sm={6} 
-                      lg={4} 
-                      key={`pending-${index}`} 
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      lg={4}
+                      key={`pending-${index}`}
                       sx={{ display: 'flex', height: 'auto' }}
                     >
                       <Box sx={{ width: '100%', display: 'flex' }}>
@@ -1297,7 +1322,7 @@ export const AccountMappings: React.FC = () => {
         {/* Budget Selection */}
         <Card>
           <CardContent>
-            <BudgetSelector 
+            <BudgetSelector
               currentBudgetId={accountsData?.currentBudgetId}
               onBudgetChange={() => {
                 // Refresh accounts and mappings after budget change

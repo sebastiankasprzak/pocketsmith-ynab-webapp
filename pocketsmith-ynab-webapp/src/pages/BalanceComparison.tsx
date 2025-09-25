@@ -9,7 +9,8 @@ import {
   Stack,
   Tooltip,
   LinearProgress,
-  Alert
+  Alert,
+  IconButton
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -22,7 +23,7 @@ import {
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { BalanceComparisonTable } from '../components/BalanceComparisonTable';
-import { IOSNavigationBar } from '../components/IOSNavigationBar';
+
 import { NotificationPanel } from '../components/NotificationPanel';
 import { IOSButton } from '../components/IOSButton';
 import { IOSSearchBar } from '../components/IOSSearchBar';
@@ -477,29 +478,42 @@ export const BalanceComparison: React.FC = () => {
           boxSizing: 'border-box',
           pb: 4
         }}>
-          {/* iOS Navigation Bar */}
-          <IOSNavigationBar
-            title="Balance Comparison"
-            large={true}
-            rightAction={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <NotificationPanel
-                  notifications={notifications}
-                  onDismiss={handleDismissNotification}
-                />
-                <IOSButton
-                  variant="plain"
-                  size="small"
-                  onClick={refresh}
-                  disabled={loading || refreshing}
-                  hapticFeedback={true}
-                  pressAnimation={true}
-                >
-                  <RefreshIcon sx={{ fontSize: '20px' }} />
-                </IOSButton>
-              </Box>
-            }
-          />
+          {/* Top action bar without title - notifications and refresh only */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            alignItems: 'center', 
+            p: 2, 
+            gap: 1,
+            position: 'sticky',
+            top: 0,
+            backgroundColor: 'background.default',
+            zIndex: 1
+          }}>
+            <NotificationPanel
+              notifications={notifications}
+              onDismiss={handleDismissNotification}
+            />
+            <IconButton
+              onClick={refresh}
+              size="small"
+              disabled={loading || refreshing}
+              sx={{
+                color: 'text.primary',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  transform: 'scale(1.05)'
+                },
+                '&:active': {
+                  transform: 'scale(0.95)'
+                }
+              }}
+              aria-label="Refresh balance data"
+            >
+              <RefreshIcon sx={{ fontSize: '20px' }} />
+            </IconButton>
+          </Box>
 
           {/* Error state */}
           {error && (
